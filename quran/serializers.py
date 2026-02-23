@@ -535,56 +535,78 @@ class RecitationSerializer(serializers.ModelSerializer):
             representation.pop('words_timestamps', None)
             representation.pop('ayahs_timestamps', None)
 
-        # Add recitation_surahs with file_url for each
+        # Add recitation_surahs with file_url for each (filtered by surah_uuid on retrieve when provided)
         from quran.models import RecitationSurah
         recitation_surahs = RecitationSurah.objects.filter(recitation=instance)
+        if request and action == 'retrieve':
+            surah_uuid = request.query_params.get('surah_uuid')
+            if surah_uuid:
+                recitation_surahs = recitation_surahs.filter(surah__uuid=surah_uuid)
         representation['recitation_surahs'] = RecitationSurahSerializer(recitation_surahs, many=True, context=self.context).data
 
         return representation
 
+    def _get_recitation_surahs_for_timestamps(self, obj):
+        """Return recitation_surahs, optionally filtered by surah_uuid from query params (retrieve only)."""
+        qs = obj.recitation_surahs.select_related('surah').prefetch_related('timestamps')
+        request = self.context.get('request')
+        view = self.context.get('view')
+        if request and view and view.action == 'retrieve':
+            surah_uuid = request.query_params.get('surah_uuid')
+            if surah_uuid:
+                qs = qs.filter(surah__uuid=surah_uuid)
+        return qs
+
     def get_ayahs_timestamps(self, obj):
-        # Get all timestamps ordered by start time
+        """Return ayah start times grouped by surah: [{ surah, timestamps }, ...]."""
         from quran.models import RecitationSurahTimestamp
-        timestamps = RecitationSurahTimestamp.objects.filter(recitation_surah__recitation=obj).order_by('start_time')
 
-        # Collect all surah IDs associated with this recitation
-        surah_ids = obj.recitation_surahs.values_list('surah_id', flat=True)
-        ayahs = Ayah.objects.filter(surah_id__in=surah_ids).all()
-        ayahs_first_words_as_id = set()
-        for ayah in ayahs:
-            words_with_id = ayah.words.values("id").first()
-            ayahs_first_words_as_id.add(words_with_id['id'])
+        result = []
+        for recitation_surah in self._get_recitation_surahs_for_timestamps(obj):
+            timestamps = list(
+                RecitationSurahTimestamp.objects.filter(recitation_surah=recitation_surah).order_by('start_time')
+            )
+            if not timestamps:
+                result.append({"surah": str(recitation_surah.surah.uuid), "timestamps": []})
+                continue
 
-        if not timestamps:
-            return []
+            ayahs = Ayah.objects.filter(surah=recitation_surah.surah).prefetch_related('words')
+            ayahs_first_words_as_id = set()
+            for ayah in ayahs:
+                first_word = ayah.words.values("id").first()
+                if first_word:
+                    ayahs_first_words_as_id.add(first_word['id'])
 
-        # Skip the first ayah and get start times of remaining ayahs
-        ayah_start_times = []
-        for timestamp in timestamps[1:]:  # Skip first timestamp
-            start_time = timestamp.start_time.strftime('%H:%M:%S.%f')[:-3]  # Remove last 3 digits of microseconds
-            if timestamp.word_id in ayahs_first_words_as_id:
-                ayah_start_times.append(start_time)
-        return ayah_start_times
+            ayah_start_times = []
+            for timestamp in timestamps[1:]:  # Skip first timestamp
+                start_time = timestamp.start_time.strftime('%H:%M:%S.%f')[:-3]  # Trim to milliseconds
+                if timestamp.word_id in ayahs_first_words_as_id:
+                    ayah_start_times.append(start_time)
+            result.append({"surah": str(recitation_surah.surah.uuid), "timestamps": ayah_start_times})
+        return result
 
     # Deprecated – validation now occurs in upload endpoint if needed
 
     def get_words_timestamps(self, obj):
-        """Return word-level timestamps for this recitation across all linked surahs."""
+        """Return word-level timestamps grouped by surah: [{ surah, timestamps }, ...]."""
         from quran.models import RecitationSurahTimestamp
-        timestamps = []
-        qs = RecitationSurahTimestamp.objects.filter(recitation_surah__recitation=obj).order_by('start_time')
-        for timestamp in qs:
-            # Format the time as HH:MM:SS.mmm
-            start_time = timestamp.start_time.strftime('%H:%M:%S.%f')[:-3]  # Trim microseconds to milliseconds
-            end_time = timestamp.end_time.strftime('%H:%M:%S.%f')[:-3] if timestamp.end_time else None
-            timestamps.append(
-                {
-                    'start': start_time,
-                    'end': end_time,
-                    'word_uuid': str(timestamp.word.uuid) if timestamp.word else None,
-                }
-            )
-        return timestamps
+
+        result = []
+        for recitation_surah in self._get_recitation_surahs_for_timestamps(obj):
+            timestamps = []
+            qs = RecitationSurahTimestamp.objects.filter(recitation_surah=recitation_surah).select_related('word').order_by('start_time')
+            for timestamp in qs:
+                start_time = timestamp.start_time.strftime('%H:%M:%S.%f')[:-3]  # Trim to milliseconds
+                end_time = timestamp.end_time.strftime('%H:%M:%S.%f')[:-3] if timestamp.end_time else None
+                timestamps.append(
+                    {
+                        'start': start_time,
+                        'end': end_time,
+                        'word_uuid': str(timestamp.word.uuid) if timestamp.word else None,
+                    }
+                )
+            result.append({"surah": str(recitation_surah.surah.uuid), "timestamps": timestamps})
+        return result
 
 class TranslatorDetailSerializer(serializers.Serializer):
     uuid = serializers.UUIDField()

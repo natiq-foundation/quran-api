@@ -33,7 +33,18 @@ from quran.serializers import RecitationSerializer, RecitationListSerializer
 		],
 		responses={200: RecitationListSerializer(many=True)}
 	),
-	retrieve=extend_schema(summary="Retrieve a specific Recitation by UUID"),
+	retrieve=extend_schema(
+		summary="Retrieve a specific Recitation by UUID",
+		parameters=[
+			OpenApiParameter(
+				name="surah_uuid",
+				type=OpenApiTypes.UUID,
+				location=OpenApiParameter.QUERY,
+				required=False,
+				description="UUID of the Surah to filter timestamps by. When provided, only timestamps for this surah are returned."
+			)
+		],
+	),
 	create=extend_schema(summary="Create a new Recitation record"),
 	update=extend_schema(summary="Update an existing Recitation record"),
 	partial_update=extend_schema(summary="Partially update a Recitation record"),
@@ -169,7 +180,7 @@ class RecitationViewSet(viewsets.ModelViewSet):
 					RecitationSurahTimestamp.objects.bulk_create(ts_objs)
 			if not word_timestamps:
 				from quran.tasks import forced_alignment
-    
+
 				# Construct the audio URL using s3_uuid
 				audio_url = new_file.get_absolute_url()
 

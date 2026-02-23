@@ -1331,6 +1331,13 @@ paths:
       operationId: recitations_retrieve
       summary: Retrieve a specific Recitation by UUID
       parameters:
+      - in: query
+        name: surah_uuid
+        schema:
+          type: string
+          format: uuid
+        description: UUID of the Surah to filter timestamps by. When provided, only
+          timestamps for this surah are returned.
       - in: path
         name: uuid
         schema:
