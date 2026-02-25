@@ -8,7 +8,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
 from core import permissions as core_permissions
 from core.pagination import CustomLimitOffsetPagination
 from quran.models import Recitation, Surah, Ayah, AyahTranslation, RecitationSurah, RecitationSurahTimestamp, Word
-from quran.serializers import RecitationSerializer, RecitationListSerializer
+from quran.serializers import RecitationSerializer, RecitationListSerializer, TrackDetailSerializer
 
 
 @extend_schema_view(
@@ -108,52 +108,90 @@ class RecitationViewSet(viewsets.ModelViewSet):
 		return self.update(request, *args, partial=True, **kwargs)
 
 	@extend_schema(
-		summary="Upload a surah audio file and optional word-level timestamps for a Recitation",
-		description=("Accepts a multipart/form-data request with parts: file (mp3) and optional word_timestamps JSON list."),
+		summary="List or create Tracks (per-surah audio files) for this Recitation",
+		description=(
+			"GET: list all tracks (RecitationSurah) for this recitation, "
+			"optionally filtered by surah_uuid. "
+			"POST: upload a surah audio file and optional word-level timestamps for this recitation."
+		),
 		request={
 			"multipart/form-data": {
 				"type": "object",
-				"properties": {"file": {"type": "string", "format": "binary"}, "word_timestamps": {"type": "string", "description": "JSON list, optional"}},
-				"required": ["file"],
+				"properties": {
+					"file": {"type": "string", "format": "binary"},
+					"surah_uuid": {"type": "string", "format": "uuid"},
+					"word_timestamps": {
+						"type": "string",
+						"description": "JSON list of word timestamps, optional",
+					},
+				},
+				"required": ["file", "surah_uuid"],
 			},
 		},
-		responses={201: OpenApiTypes.OBJECT},
-		methods=["POST"],
 	)
-	@action(detail=True, methods=["post"], url_path="upload/(?P<surah_uuid>[^/.]+)", parser_classes=[MultiPartParser, FormParser])
-	def upload(self, request, *args, **kwargs):
+	@action(detail=True, methods=["get", "post"], url_path="track", parser_classes=[MultiPartParser, FormParser])
+	def track(self, request, *args, **kwargs):
 		from core.utils import upload_mp3_to_s3
 		from django.db import transaction
+
 		recitation: Recitation = self.get_object()
 		self.check_object_permissions(request, recitation)
+
+		# LIST TRACKS FOR THIS RECITATION (lightweight: uuid + surah_uuid + file_url)
+		if request.method.lower() == "get":
+			queryset = RecitationSurah.objects.filter(recitation=recitation).select_related("surah", "file")
+			surah_uuid = request.query_params.get("surah_uuid")
+			if surah_uuid:
+				queryset = queryset.filter(surah__uuid=surah_uuid)
+			from quran.serializers import RecitationSurahSerializer
+			serializer = RecitationSurahSerializer(queryset, many=True, context=self.get_serializer_context())
+			return Response(serializer.data)
+
+		# CREATE A NEW TRACK (UPLOAD)
 		file_obj = request.FILES.get("file")
-		surah_uuid = kwargs.get("surah_uuid")
+		surah_uuid = request.data.get("surah_uuid")
 		word_ts_raw = request.data.get("word_timestamps")
+
+		errors = {}
 		if not file_obj:
-			return Response({"file": "This field is required."}, status=status.HTTP_400_BAD_REQUEST)
+			errors["file"] = "This field is required."
 		if not surah_uuid:
-			return Response({"surah_uuid": "This field is required."}, status=status.HTTP_400_BAD_REQUEST)
+			errors["surah_uuid"] = "This field is required."
+		if errors:
+			return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+
 		try:
 			surah = Surah.objects.get(uuid=surah_uuid)
 		except Surah.DoesNotExist:
-			return Response({"detail": "Surah not found."}, status=status.HTTP_404_NOT_FOUND)
+			return Response({"surah_uuid": "Surah not found."}, status=status.HTTP_404_NOT_FOUND)
+
 		if surah.mushaf_id != recitation.mushaf_id:
-			return Response({"detail": "Surah does not belong to the same Mushaf as the recitation."}, status=status.HTTP_400_BAD_REQUEST)
+			return Response(
+				{"detail": "Surah does not belong to the same Mushaf as the recitation."},
+				status=status.HTTP_400_BAD_REQUEST,
+			)
+
 		word_timestamps = None
 		if word_ts_raw:
 			try:
 				import json as _json
+
 				word_timestamps = _json.loads(word_ts_raw)
 				if not isinstance(word_timestamps, list):
 					raise ValueError
 			except ValueError:
-				return Response({"word_timestamps": "Invalid JSON – expected list."}, status=status.HTTP_400_BAD_REQUEST)
+				return Response(
+					{"word_timestamps": "Invalid JSON – expected list."},
+					status=status.HTTP_400_BAD_REQUEST,
+				)
+
 		try:
 			new_file = upload_mp3_to_s3(file_obj, request.user, folder="recitations")
 		except ValueError as e:
 			return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 		except Exception as e:
 			return Response({"error": f"Upload failed: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 		with transaction.atomic():
 			recitation_surah, _ = RecitationSurah.objects.get_or_create(
 				recitation=recitation,
@@ -163,21 +201,33 @@ class RecitationViewSet(viewsets.ModelViewSet):
 			if not recitation_surah.file_id:
 				recitation_surah.file = new_file
 				recitation_surah.save(update_fields=["file"])
+
 			if word_timestamps:
 				from datetime import datetime
+
 				ts_objs = []
 				for ts in word_timestamps:
 					try:
 						start_time = datetime.strptime(ts["start"], "%H:%M:%S.%f")
-						end_time = (datetime.strptime(ts["end"], "%H:%M:%S.%f") if ts.get("end") else None)
+						end_time = (
+							datetime.strptime(ts["end"], "%H:%M:%S.%f") if ts.get("end") else None
+						)
 						word = None
 						if ts.get("word_uuid"):
 							word = Word.objects.filter(uuid=ts["word_uuid"]).first()
-						ts_objs.append(RecitationSurahTimestamp(recitation_surah=recitation_surah, start_time=start_time, end_time=end_time, word=word))
+						ts_objs.append(
+							RecitationSurahTimestamp(
+								recitation_surah=recitation_surah,
+								start_time=start_time,
+								end_time=end_time,
+								word=word,
+							)
+						)
 					except Exception:
 						continue
 				if ts_objs:
 					RecitationSurahTimestamp.objects.bulk_create(ts_objs)
+
 			if not word_timestamps:
 				from quran.tasks import forced_alignment
 
@@ -185,9 +235,9 @@ class RecitationViewSet(viewsets.ModelViewSet):
 				audio_url = new_file.get_absolute_url()
 
 				# Get all words in the surah, ordered by ayah number and id (creation order)
-				words = list(Word.objects.filter(ayah__surah=surah).order_by('ayah__number', 'id'))
-				text = ' '.join([w.text for w in words])
-				
+				words = list(Word.objects.filter(ayah__surah=surah).order_by("ayah__number", "id"))
+				text = " ".join([w.text for w in words])
+
 				# Prepare additional data to pass through forced_alignment to forced_alignment_result
 				additional = {
 					"recitation_uuid": str(recitation.uuid),
@@ -196,6 +246,111 @@ class RecitationViewSet(viewsets.ModelViewSet):
 					"word_uuids": [str(w.uuid) for w in words],
 					"user_id": request.user.id,
 				}
-				
+
 				transaction.on_commit(lambda: forced_alignment.delay(audio_url, text, additional))
-		return Response({"detail": "Upload processed successfully."}, status=status.HTTP_201_CREATED)
+
+		serializer = TrackDetailSerializer(recitation_surah, context=self.get_serializer_context())
+		return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+	@extend_schema(
+		summary="Retrieve, update, or delete a single Track for this Recitation",
+		description=(
+			"GET: retrieve a single track. "
+			"PATCH: replace the audio file and/or word timestamps. "
+			"DELETE: remove the track."
+		),
+	)
+	@action(
+		detail=True,
+		methods=["get", "patch", "delete"],
+		url_path="track/(?P<track_uuid>[^/.]+)",
+		parser_classes=[MultiPartParser, FormParser],
+	)
+	def track_detail(self, request, *args, **kwargs):
+		from core.utils import upload_mp3_to_s3
+		from django.db import transaction
+
+		recitation: Recitation = self.get_object()
+		self.check_object_permissions(request, recitation)
+		track_uuid = kwargs.get("track_uuid")
+
+		try:
+			recitation_surah = RecitationSurah.objects.get(uuid=track_uuid, recitation=recitation)
+		except RecitationSurah.DoesNotExist:
+			return Response({"detail": "Track not found."}, status=status.HTTP_404_NOT_FOUND)
+
+		method = request.method.lower()
+
+		if method == "get":
+			serializer = TrackDetailSerializer(recitation_surah, context=self.get_serializer_context())
+			return Response(serializer.data)
+
+		if method == "delete":
+			recitation_surah.delete()
+			return Response(status=status.HTTP_204_NO_CONTENT)
+
+		# PATCH: update file and/or word timestamps
+		file_obj = request.FILES.get("file")
+		word_ts_raw = request.data.get("word_timestamps")
+
+		word_timestamps = None
+		if word_ts_raw is not None:
+			if word_ts_raw == "":
+				word_timestamps = []
+			else:
+				try:
+					import json as _json
+
+					word_timestamps = _json.loads(word_ts_raw)
+					if not isinstance(word_timestamps, list):
+						raise ValueError
+				except ValueError:
+					return Response(
+						{"word_timestamps": "Invalid JSON – expected list."},
+						status=status.HTTP_400_BAD_REQUEST,
+					)
+
+		with transaction.atomic():
+			if file_obj:
+				try:
+					new_file = upload_mp3_to_s3(file_obj, request.user, folder="recitations")
+				except ValueError as e:
+					return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+				except Exception as e:
+					return Response(
+						{"error": f"Upload failed: {str(e)}"},
+						status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+					)
+				recitation_surah.file = new_file
+				recitation_surah.save(update_fields=["file"])
+
+			if word_timestamps is not None:
+				from datetime import datetime
+
+				# Replace existing timestamps
+				recitation_surah.timestamps.all().delete()
+				ts_objs = []
+				for ts in word_timestamps:
+					try:
+						start_time = datetime.strptime(ts["start"], "%H:%M:%S.%f")
+						end_time = (
+							datetime.strptime(ts["end"], "%H:%M:%S.%f") if ts.get("end") else None
+						)
+						word = None
+						if ts.get("word_uuid"):
+							word = Word.objects.filter(uuid=ts["word_uuid"]).first()
+						ts_objs.append(
+							RecitationSurahTimestamp(
+								recitation_surah=recitation_surah,
+								start_time=start_time,
+								end_time=end_time,
+								word=word,
+							)
+						)
+					except Exception:
+						continue
+				if ts_objs:
+					RecitationSurahTimestamp.objects.bulk_create(ts_objs)
+
+		serializer = TrackDetailSerializer(recitation_surah, context=self.get_serializer_context())
+		return Response(serializer.data)

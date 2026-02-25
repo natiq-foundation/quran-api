@@ -1437,19 +1437,38 @@ paths:
       responses:
         '204':
           description: No response body
-  /recitations/{uuid}/upload/{surah_uuid}/:
-    post:
-      operationId: recitations_upload_create
-      description: 'Accepts a multipart/form-data request with parts: file (mp3) and
-        optional word_timestamps JSON list.'
-      summary: Upload a surah audio file and optional word-level timestamps for a
-        Recitation
+  /recitations/{uuid}/track/:
+    get:
+      operationId: recitations_track_retrieve
+      description: 'GET: list all tracks (RecitationSurah) for this recitation, optionally
+        filtered by surah_uuid. POST: upload a surah audio file and optional word-level
+        timestamps for this recitation.'
+      summary: List or create Tracks (per-surah audio files) for this Recitation
       parameters:
       - in: path
-        name: surah_uuid
+        name: uuid
         schema:
           type: string
+          format: uuid
         required: true
+      tags:
+      - recitations
+      security:
+      - knoxApiToken: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recitation'
+          description: ''
+    post:
+      operationId: recitations_track_create
+      description: 'GET: list all tracks (RecitationSurah) for this recitation, optionally
+        filtered by surah_uuid. POST: upload a surah audio file and optional word-level
+        timestamps for this recitation.'
+      summary: List or create Tracks (per-surah audio files) for this Recitation
+      parameters:
       - in: path
         name: uuid
         schema:
@@ -1467,21 +1486,113 @@ paths:
                 file:
                   type: string
                   format: binary
+                surah_uuid:
+                  type: string
+                  format: uuid
                 word_timestamps:
                   type: string
-                  description: JSON list, optional
+                  description: JSON list of word timestamps, optional
               required:
               - file
+              - surah_uuid
       security:
       - knoxApiToken: []
       responses:
-        '201':
+        '200':
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: {}
+                $ref: '#/components/schemas/Recitation'
           description: ''
+  /recitations/{uuid}/track/{track_uuid}/:
+    get:
+      operationId: recitations_track_retrieve_2
+      description: 'GET: retrieve a single track. PATCH: replace the audio file and/or
+        word timestamps. DELETE: remove the track.'
+      summary: Retrieve, update, or delete a single Track for this Recitation
+      parameters:
+      - in: path
+        name: track_uuid
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: uuid
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - recitations
+      security:
+      - knoxApiToken: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recitation'
+          description: ''
+    patch:
+      operationId: recitations_track_partial_update
+      description: 'GET: retrieve a single track. PATCH: replace the audio file and/or
+        word timestamps. DELETE: remove the track.'
+      summary: Retrieve, update, or delete a single Track for this Recitation
+      parameters:
+      - in: path
+        name: track_uuid
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: uuid
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - recitations
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedRecitation'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedRecitation'
+      security:
+      - knoxApiToken: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recitation'
+          description: ''
+    delete:
+      operationId: recitations_track_destroy
+      description: 'GET: retrieve a single track. PATCH: replace the audio file and/or
+        word timestamps. DELETE: remove the track.'
+      summary: Retrieve, update, or delete a single Track for this Recitation
+      parameters:
+      - in: path
+        name: track_uuid
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: uuid
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - recitations
+      security:
+      - knoxApiToken: []
+      responses:
+        '204':
+          description: No response body
   /surahs/:
     get:
       operationId: surahs_list
@@ -3549,12 +3660,6 @@ components:
           type: string
           format: date-time
           readOnly: true
-        words_timestamps:
-          type: string
-          readOnly: true
-        ayahs_timestamps:
-          type: string
-          readOnly: true
     PatchedSurah:
       type: object
       properties:
@@ -4003,14 +4108,7 @@ components:
           type: string
           format: date-time
           readOnly: true
-        words_timestamps:
-          type: string
-          readOnly: true
-        ayahs_timestamps:
-          type: string
-          readOnly: true
       required:
-      - ayahs_timestamps
       - created_at
       - duration
       - get_mushaf_uuid
@@ -4021,7 +4119,6 @@ components:
       - reciter_account_uuid
       - updated_at
       - uuid
-      - words_timestamps
     RecitationList:
       type: object
       properties:
