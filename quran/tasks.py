@@ -216,6 +216,8 @@ def import_mushaf_task(quran_data, user_id):
                     mushaf=mushaf,
                     number=surah_data["number"],
                     # name=surah_data["name"],
+                    has_bismillah=surah_data["has_bismillah"],
+                    bismillah_text=surah_data["bismillah_text"],
                     period=surah_data["period"],
                 )
             )
@@ -238,7 +240,6 @@ def import_mushaf_task(quran_data, user_id):
                         number=ayah["number"],
                         sajdah=ayah["sajdah"],
                         is_bismillah=ayah["is_bismillah"],
-                        bismillah_text=ayah["bismillah_text"],
                         length=length,
                     )
                 )
@@ -324,10 +325,10 @@ def import_translation_task(translation_data, user_id):
         user=user,
         resource_controller="translations",
         resource_action="import",
-        resource_uuid=translation.uuid,
+        resource_uuid=translation.id,
         status=Notification.STATUS_NOTHING,
         description=f"Translation import complete",
-        message=f"Translation {translation.uuid} imported successfully.",
+        message=f"Translation {translation.id} imported successfully.",
         message_type=Notification.MESSAGE_TYPE_SUCCESS,
     )
-    return f"Translation {translation.uuid} imported successfully."
+    return f"Translation {translation.id} imported successfully."

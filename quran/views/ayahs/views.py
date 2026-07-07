@@ -61,7 +61,6 @@ class AyahViewSet(viewsets.ModelViewSet):
             "number",
             "sajdah",
             "is_bismillah",
-            "bismillah_text",
             "creator",
             "length",
         ]

@@ -3507,9 +3507,8 @@ components:
         breakers:
           type: string
           readOnly: true
-        bismillah:
-          type: string
-          readOnly: true
+        is_bismillah:
+          type: boolean
         surah:
           allOf:
           - $ref: '#/components/schemas/Surah'
@@ -3524,7 +3523,6 @@ components:
           minimum: -2147483648
           description: Character count of the ayah text (joined words)
       required:
-      - bismillah
       - breakers
       - id
       - number
@@ -3542,9 +3540,6 @@ components:
         is_bismillah:
           type: boolean
           default: false
-        bismillah_text:
-          type: string
-          nullable: true
         sajdah:
           type: string
           nullable: true
@@ -3646,9 +3641,6 @@ components:
           nullable: true
         is_bismillah:
           type: boolean
-        bismillah_text:
-          type: string
-          nullable: true
         text:
           type: string
           readOnly: true
@@ -3681,9 +3673,8 @@ components:
         breakers:
           type: string
           readOnly: true
-        bismillah:
-          type: string
-          readOnly: true
+        is_bismillah:
+          type: boolean
         surah:
           allOf:
           - $ref: '#/components/schemas/SurahInAyah'
@@ -3705,7 +3696,6 @@ components:
             $ref: '#/components/schemas/Word'
           readOnly: true
       required:
-      - bismillah
       - breakers
       - id
       - mushaf
@@ -3969,9 +3959,8 @@ components:
         breakers:
           type: string
           readOnly: true
-        bismillah:
-          type: string
-          readOnly: true
+        is_bismillah:
+          type: boolean
         surah:
           allOf:
           - $ref: '#/components/schemas/Surah'

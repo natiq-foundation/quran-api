@@ -85,13 +85,11 @@ class SurahSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(SurahBismillahSerializer)
     def get_bismillah(self, instance):
+        if not instance.has_bismillah:
+            return None
         # Get the first ayah of this surah
         first_ayah = instance.ayahs.order_by("number").first()
-        text = (
-            first_ayah.bismillah_text
-            if first_ayah and first_ayah.bismillah_text is not None
-            else ""
-        )
+        text = instance.bismillah_text
         is_ayah = first_ayah.is_bismillah if first_ayah else False
         return {"is_ayah": is_ayah, "text": text}
 
@@ -103,7 +101,7 @@ class SurahSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         mushaf_id = validated_data.pop("mushaf_id")
-        name = validated_data.pop("names")
+        names = validated_data.pop("names")
         from quran.models import Mushaf
 
         mushaf = Mushaf.objects.get(id=mushaf_id)
@@ -123,7 +121,6 @@ class SurahInAyahSerializer(serializers.ModelSerializer):
 class AyahSerializer(serializers.ModelSerializer):
     text = serializers.SerializerMethodField()
     breakers = serializers.SerializerMethodField()
-    bismillah = serializers.SerializerMethodField()
     surah = serializers.SerializerMethodField()
     surah_number = serializers.SerializerMethodField()
 
@@ -135,7 +132,7 @@ class AyahSerializer(serializers.ModelSerializer):
             "sajdah",
             "text",
             "breakers",
-            "bismillah",
+            "is_bismillah",
             "surah",
             "surah_number",
             "length",
@@ -219,13 +216,6 @@ class AyahSerializer(serializers.ModelSerializer):
         # Return breakers for current ayah
         return ayah_breakers.get(instance.id, None)
 
-    def get_bismillah(self, instance):
-        # Always return a bismillah object with text (never null)
-        text = instance.bismillah_text
-        if text is None:
-            text = ""
-        return {"is_ayah": instance.is_bismillah, "text": text}
-
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         # Remove null fields safely
@@ -296,7 +286,7 @@ class AyahSerializerView(AyahSerializer):
 # Separate serializer for ayahs in surah
 class AyahInSurahSerializer(AyahSerializer):
     class Meta(AyahSerializer.Meta):
-        fields = ["id", "number", "sajdah", "is_bismillah", "bismillah_text", "text"]
+        fields = ["id", "number", "sajdah", "is_bismillah", "text"]
 
 
 class SurahDetailSerializer(SurahSerializer):
@@ -482,7 +472,6 @@ class AyahAddSerializer(serializers.Serializer):
     surah_id = serializers.UUIDField()
     text = serializers.CharField()
     is_bismillah = serializers.BooleanField(default=False)
-    bismillah_text = serializers.CharField(required=False, allow_null=True)
     sajdah = serializers.CharField(required=False, allow_null=True)
 
     def to_representation(self, instance):
@@ -491,7 +480,6 @@ class AyahAddSerializer(serializers.Serializer):
             "number": instance.number,
             "surah_id": str(instance.surah.id),
             "is_bismillah": instance.is_bismillah,
-            "bismillah_text": instance.bismillah_text,
             "sajdah": instance.sajdah,
             "length": instance.length,
         }
@@ -514,7 +502,6 @@ class AyahAddSerializer(serializers.Serializer):
             "creator": self.context["request"].user,
             "number": next_number,
             "is_bismillah": validated_data.get("is_bismillah", False),
-            "bismillah_text": validated_data.get("bismillah_text", None),
             "sajdah": validated_data.get("sajdah", None),
         }
         ayah = Ayah.objects.create(**ayah_data)

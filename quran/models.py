@@ -49,6 +49,8 @@ class Surah(models.Model):
     period = models.CharField(
         max_length=50, choices=PERIOD_CHOICES, blank=True, null=True
     )
+    has_bismillah = models.BooleanField(default=True)
+    bismillah_text = models.TextField(blank=True, null=True)
     search_terms = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -78,7 +80,6 @@ class Ayah(models.Model):
         max_length=20, choices=SAJDAH_CHOICES, default="none", null=True
     )
     is_bismillah = models.BooleanField(default=False)
-    bismillah_text = models.TextField(blank=True, null=True)
     length = models.IntegerField(
         default=0, help_text="Character count of the ayah text (joined words)"
     )
