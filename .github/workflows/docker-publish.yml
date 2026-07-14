@@ -2,16 +2,50 @@ name: Docker Publish
 
 on:
   push:
-    branches: 
+    branches:
       - "main"
       - "test"
       - "dev"
 
+permissions:
+  contents: read
+
 jobs:
-  build:
+  preflight:
+    name: Preflight (fork-safe check)
     runs-on: ubuntu-latest
 
     steps:
+      - name: Show skip reason
+        if: ${{ vars.DOCKER_HUB_USERNAME == '' }}
+        run: |
+          {
+            echo "### Docker publish skipped"
+            echo ""
+            echo "Docker Hub publishing is not configured for this repository."
+            echo ""
+            echo "To enable it, add:"
+            echo "- Variable: \`DOCKER_HUB_USERNAME\`"
+            echo "- Secret: \`DOCKER_HUB_ACCESS_TOKEN\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  build:
+    name: Build and Push Docker Image
+    needs: preflight
+    if: ${{ vars.DOCKER_HUB_USERNAME != '' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate Docker Hub credentials
+        env:
+          DOCKER_HUB_ACCESS_TOKEN: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+        run: |
+          if [ -z "$DOCKER_HUB_ACCESS_TOKEN" ]; then
+            echo "::error::DOCKER_HUB_USERNAME is set but DOCKER_HUB_ACCESS_TOKEN is missing."
+            exit 1
+          fi
+          echo "Docker Hub credentials validated."
+
       - name: Checkout
         uses: actions/checkout@v3
 
