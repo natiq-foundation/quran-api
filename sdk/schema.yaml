@@ -1196,195 +1196,6 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
-  /phrases/:
-    get:
-      operationId: phrases_list
-      summary: List all phrases
-      tags:
-      - phrases
-      security:
-      - knoxApiToken: []
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Phrase'
-          description: ''
-    post:
-      operationId: phrases_create
-      summary: Create a new phrase
-      tags:
-      - phrases
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Phrase'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Phrase'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Phrase'
-        required: true
-      security:
-      - knoxApiToken: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Phrase'
-          description: ''
-  /phrases/{id}/:
-    get:
-      operationId: phrases_retrieve
-      summary: Retrieve a specific phrase by id
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          format: uuid
-        description: A UUID string identifying this phrase.
-        required: true
-      tags:
-      - phrases
-      security:
-      - knoxApiToken: []
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Phrase'
-          description: ''
-    put:
-      operationId: phrases_update
-      summary: Update an existing phrase
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          format: uuid
-        description: A UUID string identifying this phrase.
-        required: true
-      tags:
-      - phrases
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Phrase'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Phrase'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Phrase'
-        required: true
-      security:
-      - knoxApiToken: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Phrase'
-          description: ''
-    patch:
-      operationId: phrases_partial_update
-      summary: Partially update a phrase
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          format: uuid
-        description: A UUID string identifying this phrase.
-        required: true
-      tags:
-      - phrases
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedPhrase'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedPhrase'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedPhrase'
-      security:
-      - knoxApiToken: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Phrase'
-          description: ''
-    delete:
-      operationId: phrases_destroy
-      summary: Delete a phrase
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          format: uuid
-        description: A UUID string identifying this phrase.
-        required: true
-      tags:
-      - phrases
-      security:
-      - knoxApiToken: []
-      responses:
-        '204':
-          description: No response body
-  /phrases/modify/:
-    post:
-      operationId: phrases_modify_create
-      description: Modify phrase values for a given language. The 'language' query
-        parameter is required.
-      summary: Modify phrase values
-      parameters:
-      - in: query
-        name: language
-        schema:
-          type: string
-        description: Language code for the translation (required).
-        required: true
-      tags:
-      - phrases
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PhraseModify'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PhraseModify'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PhraseModify'
-        required: true
-      security:
-      - knoxApiToken: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PhraseModify'
-          description: ''
   /profile/{id}/:
     get:
       operationId: profile_retrieve
@@ -2019,7 +1830,7 @@ paths:
         schema:
           type: string
           enum:
-          - hafs
+          - u
         description: 'Slug of the Rasm Ol Mushaf to filter Surahs by. Common value:
           ''hafs''. Any string is accepted. (e.g. ''hafs'', ''warsh'', etc.)'
         required: true
@@ -4010,20 +3821,18 @@ components:
             * `pending_review` - Pending review
             * `published` - Published
           x-spec-enum-id: 115b2e47abe9bd4d
-        collector:
-          type: string
-          format: uuid
         compiler:
           type: string
           format: uuid
+          nullable: true
+        is_primary:
+          type: boolean
         transmissions:
           type: array
           items:
             $ref: '#/components/schemas/Transmission'
           readOnly: true
       required:
-      - collector
-      - compiler
       - id
       - name
       - slug
@@ -4208,12 +4017,12 @@ components:
             * `pending_review` - Pending review
             * `published` - Published
           x-spec-enum-id: 115b2e47abe9bd4d
-        collector:
-          type: string
-          format: uuid
         compiler:
           type: string
           format: uuid
+          nullable: true
+        is_primary:
+          type: boolean
         transmissions:
           type: array
           items:
@@ -4273,15 +4082,6 @@ components:
           type: string
           format: date-time
           readOnly: true
-    PatchedPhrase:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-          readOnly: true
-        phrase:
-          type: string
     PatchedProvenance:
       type: object
       properties:
@@ -4342,6 +4142,8 @@ components:
           readOnly: true
         recitation_type:
           type: string
+        is_primary:
+          type: boolean
         created_at:
           type: string
           format: date-time
@@ -4357,9 +4159,11 @@ components:
           type: string
           format: uuid
           readOnly: true
-        rasm_ol_mushaf:
-          type: string
-          format: uuid
+        rasm_ol_mushafs:
+          type: array
+          items:
+            type: string
+            format: uuid
         mushaf_id:
           type: string
           format: uuid
@@ -4701,27 +4505,6 @@ components:
           items:
             $ref: '#/components/schemas/UserName'
           readOnly: true
-    Phrase:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-          readOnly: true
-        phrase:
-          type: string
-      required:
-      - id
-      - phrase
-    PhraseModify:
-      type: object
-      properties:
-        phrases:
-          type: object
-          additionalProperties:
-            type: string
-      required:
-      - phrases
     Profile:
       type: object
       properties:
@@ -4832,6 +4615,8 @@ components:
           readOnly: true
         recitation_type:
           type: string
+        is_primary:
+          type: boolean
         created_at:
           type: string
           format: date-time
@@ -4936,9 +4721,11 @@ components:
           type: string
           format: uuid
           readOnly: true
-        rasm_ol_mushaf:
-          type: string
-          format: uuid
+        rasm_ol_mushafs:
+          type: array
+          items:
+            type: string
+            format: uuid
         mushaf_id:
           type: string
           format: uuid
@@ -4981,7 +4768,7 @@ components:
       - names
       - number
       - number_of_ayahs
-      - rasm_ol_mushaf
+      - rasm_ol_mushafs
     SurahBismillah:
       type: object
       properties:
@@ -4999,9 +4786,11 @@ components:
           type: string
           format: uuid
           readOnly: true
-        rasm_ol_mushaf:
-          type: string
-          format: uuid
+        rasm_ol_mushafs:
+          type: array
+          items:
+            type: string
+            format: uuid
         mushaf_id:
           type: string
           format: uuid
@@ -5050,7 +4839,7 @@ components:
       - names
       - number
       - number_of_ayahs
-      - rasm_ol_mushaf
+      - rasm_ol_mushafs
     SurahInAyah:
       type: object
       properties:
@@ -6182,10 +5971,6 @@ components:
         language:
           type: string
           maxLength: 3
-        phrase:
-          allOf:
-          - $ref: '#/components/schemas/Phrase'
-          readOnly: true
         type:
           enum:
           - given_name
@@ -6215,7 +6000,6 @@ components:
       - id
       - is_primary
       - language
-      - phrase
       - text
       - type
     Word:
@@ -6229,12 +6013,9 @@ components:
           type: string
           format: uuid
           writeOnly: true
-        text:
-          type: string
       required:
       - ayah_id
       - id
-      - text
     WordBreakerDetailResponse:
       type: object
       description: Serializer for individual word breaker responses

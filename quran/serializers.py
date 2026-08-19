@@ -87,7 +87,7 @@ class SurahSerializer(serializers.ModelSerializer):
         model = Surah
         fields = [
             "id",
-            "rasm_ol_mushaf",
+            "rasm_ol_mushafs",
             "mushaf_id",
             "names",
             "number",
@@ -263,7 +263,7 @@ class WordSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Word
-        fields = ["id", "ayah_id", "text"]
+        fields = ["id", "ayah_id"]
         read_only_fields = ["creator"]
 
     def __init__(self, no_ayah_id, **kwargs):

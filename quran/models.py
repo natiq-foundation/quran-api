@@ -3,7 +3,6 @@ from account.models import CustomUser
 from core.models import File
 from django.conf.global_settings import LANGUAGES
 from core.expressions import UUIDv7
-from django.contrib.postgres.fields import ArrayField
 
 
 class Status(models.TextChoices):
@@ -98,10 +97,8 @@ class Surah(models.Model):
     creator = models.ForeignKey(
         CustomUser, on_delete=models.CASCADE, related_name="surahs"
     )
-    rasm_ol_mushaf = models.ForeignKey(
-        RasmOlMushaf, on_delete=models.CASCADE, related_name="surahs"
-    )
     number = models.IntegerField()
+    rasm_ol_mushafs = models.ManyToManyField(RasmOlMushaf)
     period = models.CharField(
         max_length=50, choices=PERIOD_CHOICES, blank=True, null=True
     )
@@ -113,7 +110,8 @@ class Surah(models.Model):
 
     class Meta:
         ordering = ["number"]
-        unique_together = ["rasm_ol_mushaf", "number"]
+        # TODO: Check this later
+        # unique_together = ["rasm_ol_mushafs", "number"]
 
     def __str__(self):
         return f"{self.number}"
