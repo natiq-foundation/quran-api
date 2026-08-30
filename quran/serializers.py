@@ -87,7 +87,7 @@ class SurahSerializer(serializers.ModelSerializer):
         model = Surah
         fields = [
             "id",
-            "rasm_ol_mushafs",
+            # "rom_surah_ayahs_surah",
             "mushaf_id",
             "names",
             "number",
@@ -189,7 +189,7 @@ class AyahSerializer(serializers.ModelSerializer):
                 result.append(word_data)
             return result
 
-        return " ".join(word.text for word in words)
+        return " ".join(word.word_texts.first().text for word in words)
 
     def get_breakers(self, instance):
         breakers = instance.breakers.all()

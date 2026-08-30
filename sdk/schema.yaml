@@ -4159,11 +4159,6 @@ components:
           type: string
           format: uuid
           readOnly: true
-        rasm_ol_mushafs:
-          type: array
-          items:
-            type: string
-            format: uuid
         mushaf_id:
           type: string
           format: uuid
@@ -4721,11 +4716,6 @@ components:
           type: string
           format: uuid
           readOnly: true
-        rasm_ol_mushafs:
-          type: array
-          items:
-            type: string
-            format: uuid
         mushaf_id:
           type: string
           format: uuid
@@ -4768,7 +4758,6 @@ components:
       - names
       - number
       - number_of_ayahs
-      - rasm_ol_mushafs
     SurahBismillah:
       type: object
       properties:
@@ -4786,11 +4775,6 @@ components:
           type: string
           format: uuid
           readOnly: true
-        rasm_ol_mushafs:
-          type: array
-          items:
-            type: string
-            format: uuid
         mushaf_id:
           type: string
           format: uuid
@@ -4839,7 +4823,6 @@ components:
       - names
       - number
       - number_of_ayahs
-      - rasm_ol_mushafs
     SurahInAyah:
       type: object
       properties:

@@ -11,6 +11,7 @@ from quran.models import (
     AyahTranslation,
     Transmission,
     WordText,
+    RomSurahAyahs,
 )
 from django.contrib.auth import get_user_model
 from django.db import transaction
@@ -233,11 +234,10 @@ def import_mushaf_task(quran_data, user_id):
                 bismillah_text=surah_data["bismillah_text"],
                 period=surah_data["period"],
             )
-            s.save()
-            s.rasm_ol_mushafs.add(mushaf)
-            # surah_objs.append(s)
-        # Surah.objects.bulk_create(surah_objs)
-        surahs_by_number = {s.number: s for s in mushaf.surah_set.all()}
+            surah_objs.append(s)
+        Surah.objects.bulk_create(surah_objs)
+        # TODO FIX
+        surahs_by_number = {s.number: s for s in surah_objs}
         ayah_objs = []
         for surah_data in quran_data["surahs"]:
             surah = surahs_by_number[surah_data["number"]]
@@ -248,21 +248,25 @@ def import_mushaf_task(quran_data, user_id):
                     text = " ".join(word["text"] for word in ayah["words"])
                     length = len(text)
 
-                ayah_objs.append(
-                    Ayah(
-                        creator_id=user.id,
-                        surah=surah,
-                        number=ayah["number"],
-                        sajdah=ayah["sajdah"],
-                        is_bismillah=ayah["is_bismillah"],
-                        length=length,
-                    )
+                a = Ayah(
+                    id=uuid7(),
+                    creator_id=user.id,
+                    surah=surah,
+                    number=ayah["number"],
+                    sajdah=ayah["sajdah"],
+                    is_bismillah=ayah["is_bismillah"],
+                    length=length,
                 )
+                ayah_objs.append(a)
+                RomSurahAyahs.objects.create(
+                    rasm_ol_mushaf=mushaf,
+                    surah=surah,
+                    ayah_id=a.id,
+                    creator_id=user.id,
+                )
+
         Ayah.objects.bulk_create(ayah_objs)
-        ayahs_by_surah_and_number = {
-            (a.surah.number, a.number): a
-            for a in Ayah.objects.filter(surah__rasm_ol_mushafs=mushaf)
-        }
+        ayahs_by_surah_and_number = {(a.surah.number, a.number): a for a in ayah_objs}
         word_objs = []
         word_texts = []
         for surah_data in quran_data["surahs"]:

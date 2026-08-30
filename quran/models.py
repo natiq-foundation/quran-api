@@ -44,6 +44,39 @@ class RasmOlMushaf(models.Model):
         return self.name
 
 
+class RomSurahAyahs(models.Model):
+    """
+    Rasm ol mushaf <-> Surah <-> Ayahs
+    """
+
+    id = models.UUIDField(
+        db_default=UUIDv7(), primary_key=True, editable=False, unique=True
+    )
+    creator = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name="rom_surah_ayahs_creator"
+    )
+    rasm_ol_mushaf = models.ForeignKey(
+        RasmOlMushaf, on_delete=models.CASCADE, related_name="rom_surah_ayahs_rom"
+    )
+    surah = models.ForeignKey(
+        "Surah", on_delete=models.CASCADE, related_name="rom_surah_ayahs_surah"
+    )
+    ayah = models.ForeignKey(
+        "Ayah", on_delete=models.CASCADE, related_name="rom_surah_ayahs_ayah"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["rasm_ol_mushaf", "surah", "ayah"],
+                name="unique_mushaf_surah_ayah",
+            )
+        ]
+
+
 class Provenance(models.Model):
     id = models.UUIDField(
         db_default=UUIDv7(), primary_key=True, editable=False, unique=True
@@ -98,7 +131,6 @@ class Surah(models.Model):
         CustomUser, on_delete=models.CASCADE, related_name="surahs"
     )
     number = models.IntegerField()
-    rasm_ol_mushafs = models.ManyToManyField(RasmOlMushaf)
     period = models.CharField(
         max_length=50, choices=PERIOD_CHOICES, blank=True, null=True
     )
