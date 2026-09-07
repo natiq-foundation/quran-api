@@ -242,8 +242,11 @@ class TranslationViewSet(viewsets.ModelViewSet):
         # Ensure ayahs are aligned with canonical ayah ordering within the same rasm ol mushaf
         ayah_translations = (
             translation.ayah_translations.select_related("ayah", "ayah__surah")
-            .filter(ayah__surah__rasm_ol_mushaf=translation.transmission.rasm_ol_mushaf)
+            .filter(
+                ayah__surah__rom_surah_ayahs_surah__rasm_ol_mushaf=translation.transmission.rasm_ol_mushaf
+            )
             .order_by("ayah__surah__number", "ayah__number", "ayah__id")
+            .distinct()
         )
         surah_id = request.query_params.get("surah_id")
         if surah_id:

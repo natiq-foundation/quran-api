@@ -316,6 +316,7 @@ def import_translation_task(translation_data, user_id):
         rom = RasmOlMushaf.objects.get(slug=translation_data["rasm_ol_mushaf"])
         # Create new transmission for translation
         transmission = Transmission.objects.create(
+            creator_id = user.id,
             rasm_ol_mushaf=rom,
             slug=f"translation-{translation_data["translator_username"]}-{translation_data["language"]}",
         )
@@ -330,7 +331,7 @@ def import_translation_task(translation_data, user_id):
         # Build a lookup for Ayah objects of this mushaf keyed by (surah_number, ayah_number)
         ayah_lookup = {
             (a.surah.number, a.number): a.id
-            for a in Ayah.objects.filter(surah__rasm_ol_mushaf=rom)
+            for a in Ayah.objects.filter(surah__rom_surah_ayahs_surah__rasm_ol_mushaf=rom)
             .only("id", "number", "surah__number")
             .select_related("surah")
         }
