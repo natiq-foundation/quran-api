@@ -154,6 +154,10 @@ paths:
       operationId: ayahs_list
       summary: List all Ayahs (Quran verses)
       parameters:
+      - in: query
+        name: include_surah
+        schema:
+          type: boolean
       - name: limit
         required: false
         in: query
