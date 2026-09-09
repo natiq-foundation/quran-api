@@ -14,6 +14,8 @@ from pathlib import Path
 import os
 import environ
 
+API_VERSION = "1.1.0"
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 PROJECT_NAME = os.path.basename(BASE_DIR)
@@ -181,7 +183,7 @@ REST_FRAMEWORK = {
 SPECTACULAR_SETTINGS = {
     "TITLE": "Natiq API",
     "DESCRIPTION": "Natiq Quran API",
-    "VERSION": "1.0.0",
+    "VERSION": API_VERSION,
     "SERVE_INCLUDE_SCHEMA": False,
     # Postprocessing hooks to adjust generated OpenAPI schema
     "POSTPROCESSING_HOOKS": [
