@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Natiq API
-  version: 1.0.0
+  version: 0.0.0
   description: Natiq Quran API
 paths:
   /auth/login/:
