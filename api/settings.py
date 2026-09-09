@@ -30,8 +30,8 @@ environ.Env.read_env(env_file=BASE_DIR.parent / ".env")
 SECRET_KEY = os.environ.get("SECRET_KEY", default="secret")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = bool(os.environ.get("DEBUG", default=0))
-DEBUG = True
+DEBUG = bool(os.environ.get("DEBUG", default=0))
+# DEBUG = True
 
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1").split(",")
 
