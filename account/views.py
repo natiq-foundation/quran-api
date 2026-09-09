@@ -274,7 +274,7 @@ class UserViewSet(viewsets.ModelViewSet):
     lookup_field = "id"
 
     def perform_create(self, serializer):
-        serializer.save(creator=self.request.user)
+        serializer.save()
 
     @action(detail=True, methods=["get", "post"], url_path="names")
     def names(self, request, *args, **kwargs):

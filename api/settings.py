@@ -21,6 +21,12 @@ PROJECT_NAME = os.path.basename(BASE_DIR)
 env = environ.Env()
 environ.Env.read_env(env_file=BASE_DIR.parent / ".env")
 
+# OR just add VERSION variable to the .env file for development purposes
+environ.Env.read_env(env_file=BASE_DIR.parent / ".version")
+
+# In case of seeing 0.0.0 this means there is something wrong with reading .version file
+API_VERSION = os.environ.get("VERSION", "0.0.0")
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
@@ -28,8 +34,8 @@ environ.Env.read_env(env_file=BASE_DIR.parent / ".env")
 SECRET_KEY = os.environ.get("SECRET_KEY", default="secret")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = bool(os.environ.get("DEBUG", default=0))
-DEBUG = True
+DEBUG = bool(os.environ.get("DEBUG", default=0))
+# DEBUG = True
 
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1").split(",")
 
@@ -181,7 +187,7 @@ REST_FRAMEWORK = {
 SPECTACULAR_SETTINGS = {
     "TITLE": "Natiq API",
     "DESCRIPTION": "Natiq Quran API",
-    "VERSION": "1.0.0",
+    "VERSION": API_VERSION,
     "SERVE_INCLUDE_SCHEMA": False,
     # Postprocessing hooks to adjust generated OpenAPI schema
     "POSTPROCESSING_HOOKS": [

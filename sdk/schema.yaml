@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Natiq API
-  version: 1.0.0
+  version: 0.0.0
   description: Natiq Quran API
 paths:
   /auth/login/:
@@ -154,6 +154,10 @@ paths:
       operationId: ayahs_list
       summary: List all Ayahs (Quran verses)
       parameters:
+      - in: query
+        name: include_surah
+        schema:
+          type: boolean
       - name: limit
         required: false
         in: query
@@ -4205,14 +4209,12 @@ components:
           type: string
           format: uuid
           readOnly: true
-        mushaf_id:
+        rasm_ol_mushaf:
           type: string
           format: uuid
-          writeOnly: true
-        account_id:
+        account:
           type: string
           format: uuid
-          writeOnly: true
         created_at:
           type: string
           format: date-time
@@ -4871,24 +4873,22 @@ components:
           type: string
           format: uuid
           readOnly: true
-        mushaf_id:
+        rasm_ol_mushaf:
           type: string
           format: uuid
-          writeOnly: true
-        account_id:
+        account:
           type: string
           format: uuid
-          writeOnly: true
         created_at:
           type: string
           format: date-time
           readOnly: true
       required:
-      - account_id
+      - account
       - created_at
       - creator
       - id
-      - mushaf_id
+      - rasm_ol_mushaf
     Translation:
       type: object
       properties:

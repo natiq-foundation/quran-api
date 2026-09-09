@@ -20,7 +20,10 @@ import random
     list=extend_schema(
         summary="List all Ayahs (Quran verses)",
         parameters=[
-            OpenApiParameter("surah_id", OpenApiTypes.UUID, OpenApiParameter.QUERY)
+            OpenApiParameter("surah_id", OpenApiTypes.UUID, OpenApiParameter.QUERY),
+            OpenApiParameter(
+                "include_surah", OpenApiTypes.BOOL, OpenApiParameter.QUERY
+            ),
         ],
     ),
     retrieve=extend_schema(summary="Retrieve a specific Ayah by id"),

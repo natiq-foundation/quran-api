@@ -86,23 +86,23 @@ class TakhtitViewSet(viewsets.ModelViewSet):
     lookup_field = "id"
 
     def perform_create(self, serializer):
-        mushaf_id = self.request.data.get("mushaf_id")
-        account_id = self.request.data.get("account_id")
-        from quran.models import Mushaf
+        rasm_ol_mushaf = self.request.data.get("rasm_ol_mushaf")
+        account_id = self.request.data.get("account")
+        from quran.models import RasmOlMushaf
         from account.models import CustomUser
 
         mushaf = None
         account = None
         errors = {}
-        if not mushaf_id:
-            errors["mushaf_id"] = "This field is required."
+        if not rasm_ol_mushaf:
+            errors["rasm_ol_mushaf"] = "This field is required."
         else:
             try:
-                mushaf = Mushaf.objects.get(id=mushaf_id)
-            except Mushaf.DoesNotExist:
-                errors["mushaf_id"] = "Mushaf not found."
+                mushaf = RasmOlMushaf.objects.get(id=rasm_ol_mushaf)
+            except RasmOlMushaf.DoesNotExist:
+                errors["rasm_ol_mushaf"] = "Mushaf not found."
         if not account_id:
-            errors["account_id"] = "This field is required."
+            errors["account"] = "This field is required."
         else:
             try:
                 account = CustomUser.objects.get(id=account_id)
@@ -112,7 +112,9 @@ class TakhtitViewSet(viewsets.ModelViewSet):
             from rest_framework.exceptions import ValidationError
 
             raise ValidationError(errors)
-        serializer.save(creator=self.request.user, mushaf=mushaf, account=account)
+        serializer.save(
+            creator=self.request.user, rasm_ol_mushaf=mushaf, account=account
+        )
 
     @extend_schema(
         summary="List all ayahs_breakers for this takhtit (ayahs map style)",
@@ -138,14 +140,14 @@ class TakhtitViewSet(viewsets.ModelViewSet):
 
         from collections import defaultdict
 
-        # If the breaker value is 1 then return None
+        # If the breaker value is 0 then return None
         # Else return the breaker
-        breaker_or_none = lambda x: (x != 1 and x) or None
+        breaker_or_none = lambda x: (x != 0 and x) or None
 
         breakers_by_ayah = defaultdict(list)
         for br in breakers_qs:
             breakers_by_ayah[br.ayah_id].append(br.type.lower())
-        counters = {k: 1 for k in ["juz", "hizb", "page", "rub", "manzil"]}
+        counters = {k: 0 for k in ["juz", "hizb", "page", "rub", "manzil"]}
         data = []
         for ayah in ayah_qs:
             for br_type in breakers_by_ayah.get(ayah.id, []):
@@ -155,8 +157,9 @@ class TakhtitViewSet(viewsets.ModelViewSet):
             data.append(
                 {
                     "id": str(ayah.id),
-                    "surah": ayah.surah.number,
-                    "ayah": ayah.number,
+                    "surah_id": ayah.surah.id,
+                    "surah_number": ayah.surah.number,
+                    "ayah_number": ayah.number,
                     "length": ayah.length,
                     "juz": breaker_or_none(counters["juz"]),
                     "hizb": breaker_or_none(counters["hizb"]),
@@ -416,12 +419,20 @@ class TakhtitViewSet(viewsets.ModelViewSet):
         for item in data:
             try:
                 surah_num, ayah_num = map(int, item.split(":"))
-                surah = Surah.objects.get(number=surah_num, mushaf=takhtit.mushaf)
+                surah = (
+                    Surah.objects.filter(
+                        number=surah_num,
+                        rom_surah_ayahs_surah__rasm_ol_mushaf=takhtit.rasm_ol_mushaf,
+                    )
+                    .distinct()
+                    .get()
+                )
                 ayah = Ayah.objects.get(surah=surah, number=ayah_num)
                 AyahBreaker.objects.create(
                     ayah=ayah, takhtit=takhtit, type=breaker_type, creator=request.user
                 )
                 created += 1
-            except Exception:
-                continue
+            except Exception as e:
+                print("ERR:", e)
+                return Response({"error": "internal"}, status=500)
         return Response({"created": created}, status=status.HTTP_201_CREATED)
