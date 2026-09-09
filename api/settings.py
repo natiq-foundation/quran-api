@@ -14,14 +14,18 @@ from pathlib import Path
 import os
 import environ
 
-API_VERSION = "1.1.0"
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 PROJECT_NAME = os.path.basename(BASE_DIR)
 
 env = environ.Env()
 environ.Env.read_env(env_file=BASE_DIR.parent / ".env")
+
+# OR just add VERSION variable to the .env file for development purposes
+environ.Env.read_env(env_file=BASE_DIR.parent / ".version")
+
+# In case of seeing 0.0.0 this means there is something wrong with reading .version file
+API_VERSION = os.environ.get("VERSION", "0.0.0")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
