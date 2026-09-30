@@ -1450,19 +1450,6 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
-      - in: query
-        name: mushaf
-        schema:
-          type: string
-          enum:
-          - hafs
-        description: 'Short name of the Mushaf to filter Recitations by. Common value:
-          ''hafs''. Any string is accepted. (e.g. ''hafs'', ''warsh'', etc.)'
-        required: true
-        examples:
-          Hafs:
-            value: hafs
-            summary: Most common
       - name: offset
         required: false
         in: query
@@ -1478,6 +1465,19 @@ paths:
           enum:
           - asc
           - desc
+      - in: query
+        name: rasm_ol_mushaf
+        schema:
+          type: string
+          enum:
+          - hafs
+        description: 'Short name of the Mushaf to filter Recitations by. Common value:
+          ''hafs''. Any string is accepted. (e.g. ''hafs'', ''warsh'', etc.)'
+        required: true
+        examples:
+          U333:
+            value: u333
+            summary: Most common
       - in: query
         name: reciter_id
         schema:
@@ -1833,15 +1833,9 @@ paths:
         name: rasm_ol_mushaf
         schema:
           type: string
-          enum:
-          - u
         description: 'Slug of the Rasm Ol Mushaf to filter Surahs by. Common value:
           ''hafs''. Any string is accepted. (e.g. ''hafs'', ''warsh'', etc.)'
         required: true
-        examples:
-          Hafs:
-            value: hafs
-            summary: Most common
       - name: search
         required: false
         in: query
@@ -5992,13 +5986,18 @@ components:
           type: string
           format: uuid
           readOnly: true
-        ayah_id:
+        ayah:
           type: string
           format: uuid
-          writeOnly: true
+        texts:
+          type: array
+          items:
+            $ref: '#/components/schemas/WordText'
+          readOnly: true
       required:
-      - ayah_id
+      - ayah
       - id
+      - texts
     WordBreakerDetailResponse:
       type: object
       description: Serializer for individual word breaker responses
@@ -6027,6 +6026,18 @@ components:
       required:
       - line
       - word_id
+    WordText:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        text:
+          type: string
+      required:
+      - id
+      - text
   securitySchemes:
     knoxApiToken:
       type: apiKey

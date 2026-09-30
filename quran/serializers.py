@@ -12,6 +12,7 @@ from quran.models import (
     Ayah,
     Takhtit,
     Word,
+    WordText,
     Translation,
     AyahTranslation,
     AyahBreaker,
@@ -156,10 +157,13 @@ class AyahSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(SurahSerializer(allow_null=True))
     def get_surah(self, instance):
-        request = self.context.get("request")
-        include_surah = request.query_params.get("include_surah", None)
-        if instance.number == 1 or include_surah:
+        include_surah = self.context.get("include_surah")
+
+        if include_surah == "every_ayah":
             return SurahSerializer(instance.surah).data
+        elif instance.number == 1 and include_surah == "first_ayahs":
+            return SurahSerializer(instance.surah).data
+
         return None
 
     def get_surah_number(self, instance):
@@ -260,12 +264,19 @@ class AyahSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
+class WordTextSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WordText
+        fields = ["id", "text"]
+        read_only_fields = ["creator"]
+
+
 class WordSerializer(serializers.ModelSerializer):
-    ayah_id = serializers.UUIDField(write_only=True)
+    texts = WordTextSerializer(read_only=True, many=True)
 
     class Meta:
         model = Word
-        fields = ["id", "ayah_id"]
+        fields = ["id", "ayah", "texts"]
         read_only_fields = ["creator"]
 
     def __init__(self, no_ayah_id, **kwargs):
@@ -281,11 +292,8 @@ class WordSerializer(serializers.ModelSerializer):
         validated_data["creator"] = self.context["request"].user
         return super().create(validated_data)
 
-    def to_representation(self, instance):
-        rep = super().to_representation(instance)
-        if not self.no_ayah_id:
-            rep["ayah_id"] = str(instance.ayah.id)
-        return rep
+    def get_texts(self, obj):
+        return obj.word_texts.all()
 
 
 class AyahSerializerView(AyahSerializer):
@@ -319,7 +327,7 @@ class AyahTranslationNestedSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AyahTranslation
-        fields = ["id", "ayah_id", "text", "bismillah"]
+        fields = ["ayah_id", "text", "bismillah"]
         read_only_fields = ["creator"]
 
     def get_bismillah(self, obj):
@@ -543,7 +551,6 @@ class RecitationSerializer(serializers.ModelSerializer):
     mushaf_id = serializers.UUIDField(write_only=True)
     reciter_account_id = serializers.UUIDField(write_only=True)
 
-    # Add read-only fields for output
     get_mushaf_id = serializers.SerializerMethodField(read_only=True)
 
     track_count = serializers.SerializerMethodField(read_only=True)

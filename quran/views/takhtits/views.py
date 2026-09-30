@@ -9,8 +9,6 @@ from drf_spectacular.utils import (
     OpenApiTypes,
 )
 from django_filters.rest_framework import DjangoFilterBackend
-
-
 from core import permissions as core_permissions
 from core.pagination import CustomLimitOffsetPagination
 from quran.models import Takhtit, AyahBreaker, Ayah, Surah
@@ -121,19 +119,30 @@ class TakhtitViewSet(viewsets.ModelViewSet):
         description="Returns a flat list containing an entry for every ayah in this takhtit, with breaker info similar to the mushaf ayah_map action.",
         responses={200: AyahBreakersResponseSerializer(many=True)},
     )
-    @action(detail=True, methods=["get"], url_path="ayahs_breakers")
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="ayahs_breakers",
+    )
     def ayahs_breakers(self, request, id=None):
+        # TODO
+        # type_filter = self.request.query_params.get("type")
+
         takhtit = self.get_object()
         ayah_ids = AyahBreaker.objects.filter(takhtit=takhtit).values_list(
             "ayah_id", flat=True
         )
+
         ayah_qs = (
             Ayah.objects.select_related("surah")
             .prefetch_related("words")
             .order_by("surah__number", "number", "id")
         )
+
         breakers_qs = (
-            AyahBreaker.objects.filter(takhtit=takhtit, ayah__in=ayah_qs)
+            AyahBreaker.objects.filter(
+                takhtit=takhtit, ayah__in=ayah_qs, type=type_filter
+            )
             .select_related("ayah", "ayah__surah")
             .order_by("ayah__surah__number", "ayah__number")
         )

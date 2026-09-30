@@ -147,10 +147,15 @@ class AyahViewSet(viewsets.ModelViewSet):
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
+
         text_format = self.request.query_params.get("text_format", "text")
+        include_surah = self.request.query_params.get("include_surah", "first_ayahs")
+
         if text_format not in ["text", "word"]:
             text_format = "text"
         context["text_format"] = text_format
+
+        context["include_surah"] = include_surah
         return context
 
     def get_serializer_class(self):

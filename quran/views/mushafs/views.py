@@ -107,6 +107,7 @@ class MushafViewSet(viewsets.ModelViewSet):
         methods=["post"],
         url_path="import",
         parser_classes=[MultiPartParser, FormParser],
+        permission_classes=[permissions.IsAdminUser],
     )
     def import_mushaf(self, request):
         MUSHAF_UPLOAD_MAX_SIZE = 30 * 1024 * 1024

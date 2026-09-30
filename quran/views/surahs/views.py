@@ -4,6 +4,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import (
     extend_schema,
     extend_schema_view,
+    OpenApiTypes,
     OpenApiParameter,
     OpenApiExample,
 )
@@ -24,11 +25,10 @@ from quran.serializers import (
         parameters=[
             OpenApiParameter(
                 name="rasm_ol_mushaf",
-                type={"type": "string", "enum": ["u"]},
+                type=OpenApiTypes.STR,
                 location=OpenApiParameter.QUERY,
                 required=True,
                 description="Slug of the Rasm Ol Mushaf to filter Surahs by. Common value: 'hafs'. Any string is accepted. (e.g. 'hafs', 'warsh', etc.)",
-                examples=[OpenApiExample("hafs", value="hafs", summary="Most common")],
             )
         ],
         tags=["general", "surahs"],

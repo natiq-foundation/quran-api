@@ -207,109 +207,124 @@ def import_mushaf_task(quran_data, user_id):
     user = User.objects.get(id=user_id)
     mushaf_data = quran_data["mushaf"]
     compiler = None
-    if mushaf_data["compiler_name"]:
-        compiler, created = User.objects.get_or_create(
-            username=mushaf_data["compiler_name"]
-        )
-    with transaction.atomic():
-        mushaf = RasmOlMushaf.objects.create(
-            creator_id=user.id,
-            name=mushaf_data["name"],
-            slug=mushaf_data["slug"],
-            compiler=compiler,
-        )
-        transmission = Transmission.objects.create(
-            creator_id=user.id,
-            rasm_ol_mushaf=mushaf,
-            slug=mushaf_data["transmission"]["slug"],
-            name=mushaf_data["transmission"]["name"],
-        )
-        surah_objs = []
-        for surah_data in quran_data["surahs"]:
-            s = Surah(
-                creator_id=user.id,
-                number=surah_data["number"],
-                # name=surah_data["name"],
-                has_bismillah=surah_data["has_bismillah"],
-                bismillah_text=surah_data["bismillah_text"],
-                period=surah_data["period"],
+    published = "published" if mushaf_data["published"] is True else "draft"
+    try:
+        if mushaf_data["compiler_name"]:
+            compiler, created = User.objects.get_or_create(
+                username=mushaf_data["compiler_name"]
             )
-            surah_objs.append(s)
-        Surah.objects.bulk_create(surah_objs)
-        # TODO FIX
-        surahs_by_number = {s.number: s for s in surah_objs}
-        ayah_objs = []
-        for surah_data in quran_data["surahs"]:
-            surah = surahs_by_number[surah_data["number"]]
-            for ayah in surah_data["ayahs"]:
-                # Calculate length from words if available
-                length = 0
-                if "words" in ayah:
-                    text = " ".join(word["text"] for word in ayah["words"])
-                    length = len(text)
-
-                a = Ayah(
-                    id=uuid7(),
+        with transaction.atomic():
+            mushaf = RasmOlMushaf.objects.create(
+                creator_id=user.id,
+                name=mushaf_data["name"],
+                slug=mushaf_data["slug"],
+                compiler=compiler,
+                status=published,
+            )
+            transmission = Transmission.objects.create(
+                creator_id=user.id,
+                rasm_ol_mushaf=mushaf,
+                slug=mushaf_data["transmission"]["slug"],
+                name=mushaf_data["transmission"]["name"],
+            )
+            surah_objs = []
+            for surah_data in quran_data["surahs"]:
+                s = Surah(
                     creator_id=user.id,
-                    surah=surah,
-                    number=ayah["number"],
-                    sajdah=ayah["sajdah"],
-                    is_bismillah=ayah["is_bismillah"],
-                    length=length,
+                    number=surah_data["number"],
+                    # name=surah_data["name"],
+                    has_bismillah=surah_data["has_bismillah"],
+                    bismillah_text=surah_data["bismillah_text"],
+                    period=surah_data["period"],
                 )
-                ayah_objs.append(a)
-                RomSurahAyahs.objects.create(
-                    rasm_ol_mushaf=mushaf,
-                    surah=surah,
-                    ayah_id=a.id,
-                    creator_id=user.id,
-                )
+                surah_objs.append(s)
+            Surah.objects.bulk_create(surah_objs)
+            surahs_by_number = {s.number: s for s in surah_objs}
+            ayah_objs = []
+            for surah_data in quran_data["surahs"]:
+                surah = surahs_by_number[surah_data["number"]]
+                for ayah in surah_data["ayahs"]:
+                    # Calculate length from words if available
+                    length = 0
+                    if "words" in ayah:
+                        text = " ".join(word["text"] for word in ayah["words"])
+                        length = len(text)
 
-        Ayah.objects.bulk_create(ayah_objs)
-        ayahs_by_surah_and_number = {(a.surah.number, a.number): a for a in ayah_objs}
-        word_objs = []
-        word_texts = []
-        for surah_data in quran_data["surahs"]:
-            for ayah in surah_data["ayahs"]:
-                ayah_obj = ayahs_by_surah_and_number[
-                    (surah_data["number"], ayah["number"])
-                ]
-                for word in ayah["words"]:
-                    # Generating the id in the runtime of the api
-                    # We need the ID in memory.
-                    w = Word(id=uuid7(), ayah=ayah_obj, creator_id=user.id)
-                    word_objs.append(w)
-                    word_texts.append(
-                        WordText(
-                            text=word["text"],
-                            # Need it here
-                            word_id=w.id,
-                            creator_id=user.id,
-                            transmission=transmission,
-                        )
+                    a = Ayah(
+                        id=uuid7(),
+                        creator_id=user.id,
+                        surah=surah,
+                        number=ayah["number"],
+                        sajdah=ayah["sajdah"],
+                        is_bismillah=ayah["is_bismillah"],
+                        length=length,
                     )
-        # Then here we insert to DB with no problem :)
-        Word.objects.bulk_create(word_objs)
-        WordText.objects.bulk_create(word_texts)
-    # Send notification to user
-    Notification.objects.create(
-        user=user,
-        resource_controller="mushafs",
-        resource_action="import",
-        resource_uuid=mushaf.id,
-        status=Notification.STATUS_NOTHING,
-        description=f"Mushaf import complete",
-        message=f'Mushaf "{mushaf.name}" imported successfully.',
-        message_type=Notification.MESSAGE_TYPE_SUCCESS,
-    )
-    return f"Mushaf {mushaf.name} imported successfully."
+                    ayah_objs.append(a)
+                    RomSurahAyahs.objects.create(
+                        rasm_ol_mushaf=mushaf,
+                        surah=surah,
+                        ayah_id=a.id,
+                        creator_id=user.id,
+                    )
+
+            Ayah.objects.bulk_create(ayah_objs)
+            ayahs_by_surah_and_number = {(a.surah.number, a.number): a for a in ayah_objs}
+            word_objs = []
+            word_texts = []
+            for surah_data in quran_data["surahs"]:
+                for ayah in surah_data["ayahs"]:
+                    ayah_obj = ayahs_by_surah_and_number[
+                        (surah_data["number"], ayah["number"])
+                    ]
+                    for word in ayah["words"]:
+                        # Generating the id in the runtime of the api
+                        # We need the ID in memory.
+                        w = Word(id=uuid7(), ayah=ayah_obj, creator_id=user.id)
+                        word_objs.append(w)
+                        word_texts.append(
+                            WordText(
+                                text=word["text"],
+                                # Need it here
+                                word_id=w.id,
+                                creator_id=user.id,
+                                transmission=transmission,
+                            )
+                        )
+            # Then here we insert to DB with no problem :)
+            Word.objects.bulk_create(word_objs)
+            WordText.objects.bulk_create(word_texts)
+        # Send notification to user
+        Notification.objects.create(
+            user=user,
+            resource_controller="mushafs",
+            resource_action="import",
+            resource_uuid=mushaf.id,
+            status=Notification.STATUS_NOTHING,
+            description=f"Mushaf import complete",
+            message=f'Mushaf "{mushaf.name}" imported successfully.',
+            message_type=Notification.MESSAGE_TYPE_SUCCESS,
+        )
+    except Exception as e:
+        Notification.objects.create(
+            user=user,
+            resource_controller="quran.tasks.import_mushaf_task",
+            resource_action="",
+            resource_uuid=(
+            ),
+            status=Notification.STATUS_NOTHING,
+            description=f"Failed to import mushaf",
+            message=f"{e}", # TODO: Maybe Dont send every detail
+            message_type=Notification.MESSAGE_TYPE_FAILED,
+        )
+    return f"Mushaf imported."
 
 
 @shared_task
 def import_translation_task(translation_data, user_id):
     User = get_user_model()
     user = User.objects.get(id=user_id)
-    with transaction.atomic():
+    try:
+        with transaction.atomic():
         translator, _ = User.objects.get_or_create(
             username=translation_data["translator_username"]
         )
@@ -358,15 +373,26 @@ def import_translation_task(translation_data, user_id):
                     )
                 )
         AyahTranslation.objects.bulk_create(ayah_translations)
-    # Send notification to user
-    Notification.objects.create(
-        user=user,
-        resource_controller="translations",
-        resource_action="import",
-        resource_uuid=translation.id,
-        status=Notification.STATUS_NOTHING,
-        description=f"Translation import complete",
-        message=f"Translation {translation.id} imported successfully.",
-        message_type=Notification.MESSAGE_TYPE_SUCCESS,
-    )
+        Notification.objects.create(
+            user=user,
+            resource_controller="translations",
+            resource_action="import",
+            resource_uuid=translation.id,
+            status=Notification.STATUS_NOTHING,
+            description=f"Translation import complete",
+            message=f"Translation {translation.id} imported successfully.",
+            message_type=Notification.MESSAGE_TYPE_SUCCESS,
+        )
+    except Exception:
+        Notification.objects.create(
+            user=user,
+            resource_controller="quran.tasks.import_translation_task",
+            resource_action="",
+            resource_uuid=(
+            ),
+            status=Notification.STATUS_NOTHING,
+            description=f"Failed to import Translation",
+            message=f"{e}", # TODO: Maybe Dont send every detail
+            message_type=Notification.MESSAGE_TYPE_FAILED,
+        )
     return f"Translation {translation.id} imported successfully."

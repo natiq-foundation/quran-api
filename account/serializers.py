@@ -7,7 +7,6 @@ from django.utils.crypto import get_random_string
 
 
 class UserNameSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = UserName
         fields = [
@@ -122,7 +121,7 @@ class ProfileSerializer(UserSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         req_user = self.context["request"].user
-        id = instance.get("id")
+        id = instance.id
         if id and id != req_user.id:
             representation.pop("email")
         return representation

@@ -36,12 +36,12 @@ from datetime import timedelta
         summary="List all Recitations (audio recordings)",
         parameters=[
             OpenApiParameter(
-                name="mushaf",
+                name="rasm_ol_mushaf",
                 type={"type": "string", "enum": ["hafs"]},
                 location=OpenApiParameter.QUERY,
                 required=True,
                 description="Short name of the Mushaf to filter Recitations by. Common value: 'hafs'. Any string is accepted. (e.g. 'hafs', 'warsh', etc.)",
-                examples=[OpenApiExample("hafs", value="hafs", summary="Most common")],
+                examples=[OpenApiExample("u333", value="u333", summary="Most common")],
             ),
             OpenApiParameter(
                 name="reciter_id",
@@ -111,10 +111,10 @@ class RecitationViewSet(viewsets.ModelViewSet):
         queryset = Recitation.objects.select_related(
             "transmission", "reciter_account"
         ).only(*recitation_fields)
-        mushaf_slug = self.request.query_params.get("mushaf")
+        mushaf_slug = self.request.query_params.get("rasm_ol_mushaf")
         if self.action == "list" and not mushaf_slug:
             raise serializers.ValidationError(
-                {"mushaf": "This query parameter is required."}
+                {"rasm_ol_mushaf": "This query parameter is required."}
             )
         if not self.request.user.is_authenticated:
             queryset = queryset.exclude(Q(status="draft") | Q(status="pending_review"))

@@ -69,7 +69,7 @@ class WordViewSet(viewsets.ModelViewSet):
         return None
 
     def get_queryset(self):
-        word_fields = ["id", "ayah", "text", "creator"]
+        word_fields = ["id", "ayah", "word_texts", "creator"]
         queryset = Word.objects.select_related("ayah").only(*word_fields)
         ayah_id = self.request.query_params.get("ayah_id", None)
         if ayah_id is not None:
