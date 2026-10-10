@@ -5,6 +5,7 @@ from quran.models import (
     RecitationSurah,
     RecitationSurahTimestamp,
     Surah,
+    SurahName,
     Ayah,
     Word,
     Translation,
@@ -240,6 +241,21 @@ def import_mushaf_task(quran_data, user_id):
                 surah_objs.append(s)
             Surah.objects.bulk_create(surah_objs)
             surahs_by_number = {s.number: s for s in surah_objs}
+            
+            surah_name_objs = []
+            for surah_data in quran_data["surahs"]:
+                name_value = surah_data.get("name", "")[:50]
+                if not name_value:
+                    continue
+                surah_name_objs.append(
+                    SurahName(
+                        surah=surahs_by_number[surah_data["number"]],
+                        name=name_value,
+                    )
+                )
+            if surah_name_objs:
+                SurahName.objects.bulk_create(surah_name_objs)
+
             ayah_objs = []
             for surah_data in quran_data["surahs"]:
                 surah = surahs_by_number[surah_data["number"]]
