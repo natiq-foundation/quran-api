@@ -41,7 +41,7 @@ class MushafViewSet(viewsets.ModelViewSet):
         filters.SearchFilter,
         filters.OrderingFilter,
     ]
-    search_fields = ["slug", "name", "source"]
+    search_fields = ["slug", "name"]
     ordering_fields = ["created_at"]
     pagination_class = CustomLimitOffsetPagination
     limited_fields = {"status": ["published"]}

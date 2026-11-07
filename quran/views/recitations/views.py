@@ -232,13 +232,14 @@ class RecitationViewSet(viewsets.ModelViewSet):
                 {"surah_id": "Surah not found."}, status=status.HTTP_404_NOT_FOUND
             )
 
-        if surah.mushaf_id != recitation.mushaf_id:
-            return Response(
-                {
-                    "detail": "Surah does not belong to the same Mushaf as the recitation."
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        # Need's a match transmission method
+        # if surah.mushaf_id != recitation.mushaf_id:
+        #    return Response(
+        #        {
+        #            "detail": "Surah does not belong to the same Mushaf as the recitation."
+        #        },
+        #        status=status.HTTP_400_BAD_REQUEST,
+        #    )
 
         word_timestamps = None
         if word_ts_raw:
@@ -314,13 +315,13 @@ class RecitationViewSet(viewsets.ModelViewSet):
                         "ayah__number", "id"
                     )
                 )
-                text = " ".join([w.text for w in words])
+                text = " ".join([w.word_texts.first().text for w in words])
 
                 # Prepare additional data to pass through forced_alignment to forced_alignment_result
                 additional = {
                     "recitation_id": str(recitation.id),
                     "surah_id": str(surah.id),
-                    "file_s3_id": str(new_file.s3_id),
+                    "file_s3_id": str(new_file.s3_uuid),
                     "word_ids": [str(w.id) for w in words],
                     "user_id": request.user.id,
                 }

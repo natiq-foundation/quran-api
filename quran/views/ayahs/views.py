@@ -70,7 +70,7 @@ class AyahViewSet(viewsets.ModelViewSet):
         queryset = super().get_queryset()
         if self.action == "retrieve":
             queryset = (
-                queryset.select_related("surah", "surah__rasm_ol_mushaf")
+                queryset.select_related("surah")
                 .prefetch_related("words")
                 .only(*ayah_fields)
             )
@@ -135,7 +135,7 @@ class AyahViewSet(viewsets.ModelViewSet):
         ayahs_by_id = {
             ayah.id: ayah
             for ayah in Ayah.objects.filter(id__in=selected_ids)
-            .select_related("surah", "surah__rasm_ol_mushaf")
+            .select_related("surah")
             .prefetch_related("words")
         }
         random_ayahs = [ayahs_by_id[ayah_id] for ayah_id in selected_ids]
