@@ -3490,10 +3490,15 @@ components:
         sajdah:
           enum:
           - none
+          - vajib
+          - mustahab
           - null
           type: string
-          description: '* `none` - None'
-          x-spec-enum-id: 00a003bebd5095a2
+          description: |-
+            * `none` - None
+            * `vajib` - Vajib
+            * `mustahab` - Mustahab
+          x-spec-enum-id: b727e9291417f420
           nullable: true
         text:
           type: string
@@ -3628,10 +3633,15 @@ components:
         sajdah:
           enum:
           - none
+          - vajib
+          - mustahab
           - null
           type: string
-          description: '* `none` - None'
-          x-spec-enum-id: 00a003bebd5095a2
+          description: |-
+            * `none` - None
+            * `vajib` - Vajib
+            * `mustahab` - Mustahab
+          x-spec-enum-id: b727e9291417f420
           nullable: true
         is_bismillah:
           type: boolean
@@ -3656,10 +3666,15 @@ components:
         sajdah:
           enum:
           - none
+          - vajib
+          - mustahab
           - null
           type: string
-          description: '* `none` - None'
-          x-spec-enum-id: 00a003bebd5095a2
+          description: |-
+            * `none` - None
+            * `vajib` - Vajib
+            * `mustahab` - Mustahab
+          x-spec-enum-id: b727e9291417f420
           nullable: true
         text:
           type: string
@@ -3956,10 +3971,15 @@ components:
         sajdah:
           enum:
           - none
+          - vajib
+          - mustahab
           - null
           type: string
-          description: '* `none` - None'
-          x-spec-enum-id: 00a003bebd5095a2
+          description: |-
+            * `none` - None
+            * `vajib` - Vajib
+            * `mustahab` - Mustahab
+          x-spec-enum-id: b727e9291417f420
           nullable: true
         text:
           type: string
@@ -4103,13 +4123,10 @@ components:
           type: string
           format: uuid
           readOnly: true
-        mushaf_id:
+        transmission:
           type: string
           format: uuid
           writeOnly: true
-        get_mushaf_id:
-          type: string
-          readOnly: true
         status:
           enum:
           - draft
@@ -4121,7 +4138,7 @@ components:
             * `pending_review` - Pending review
             * `published` - Published
           x-spec-enum-id: 115b2e47abe9bd4d
-        reciter_account_id:
+        reciter_account:
           type: string
           format: uuid
           writeOnly: true
@@ -4569,13 +4586,10 @@ components:
           type: string
           format: uuid
           readOnly: true
-        mushaf_id:
+        transmission:
           type: string
           format: uuid
           writeOnly: true
-        get_mushaf_id:
-          type: string
-          readOnly: true
         status:
           enum:
           - draft
@@ -4587,7 +4601,7 @@ components:
             * `pending_review` - Pending review
             * `published` - Published
           x-spec-enum-id: 115b2e47abe9bd4d
-        reciter_account_id:
+        reciter_account:
           type: string
           format: uuid
           writeOnly: true
@@ -4618,13 +4632,12 @@ components:
           readOnly: true
       required:
       - created_at
-      - get_mushaf_id
       - id
-      - mushaf_id
       - recitation_type
-      - reciter_account_id
+      - reciter_account
       - total_duration
       - track_count
+      - transmission
       - updated_at
     RecitationList:
       type: object
