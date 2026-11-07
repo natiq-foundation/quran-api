@@ -53,7 +53,7 @@ class SurahViewSet(viewsets.ModelViewSet):
         filters.SearchFilter,
         filters.OrderingFilter,
     ]
-    search_fields = ["name"]
+    search_fields = ["period", "number"]  # Add names field
     ordering_fields = ["created_at"]
     pagination_class = CustomLimitOffsetPagination
     lookup_field = "id"

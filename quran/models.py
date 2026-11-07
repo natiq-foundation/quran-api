@@ -151,9 +151,7 @@ class Surah(models.Model):
 
 
 class Ayah(models.Model):
-    SAJDAH_CHOICES = [
-        ("none", "None"),
-    ]
+    SAJDAH_CHOICES = [("none", "None"), ("vajib", "Vajib"), ("mustahab", "Mustahab")]
 
     id = models.UUIDField(
         db_default=UUIDv7(), primary_key=True, editable=False, unique=True

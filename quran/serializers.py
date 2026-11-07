@@ -7,6 +7,7 @@ from datetime import timedelta
 
 from quran.models import (
     RasmOlMushaf,
+    RomSurahAyahs,
     Surah,
     SurahName,
     Ayah,
@@ -305,7 +306,9 @@ class AyahSerializerView(AyahSerializer):
         fields = AyahSerializer.Meta.fields + ["surah", "rasm_ol_mushaf", "words"]
 
     def get_rasm_ol_mushaf(self, instance):
-        return MushafSerializer(instance.surah.rasm_ol_mushaf).data
+        m = RomSurahAyahs.objects.filter(surah=instance.surah).first()
+
+        return MushafSerializer(m.rasm_ol_mushaf).data
 
 
 # Separate serializer for ayahs in surah
@@ -548,23 +551,18 @@ class AyahAddSerializer(serializers.Serializer):
 
 
 class RecitationSerializer(serializers.ModelSerializer):
-    mushaf_id = serializers.UUIDField(write_only=True)
-    reciter_account_id = serializers.UUIDField(write_only=True)
-
-    get_mushaf_id = serializers.SerializerMethodField(read_only=True)
-
+    transmission = serializers.UUIDField(write_only=True)
+    reciter_account = serializers.UUIDField(write_only=True)
     track_count = serializers.SerializerMethodField(read_only=True)
-
     total_duration = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Recitation
         fields = [
             "id",
-            "mushaf_id",
-            "get_mushaf_id",
+            "transmission",
             "status",
-            "reciter_account_id",
+            "reciter_account",
             "recitation_date",
             "recitation_location",
             "track_count",
@@ -579,10 +577,10 @@ class RecitationSerializer(serializers.ModelSerializer):
     def get_track_count(self, obj):
         return len(list(obj.recitation_surahs.all()))
 
-    def get_get_mushaf_id(self, obj):
-        return str(obj.mushaf.id) if obj.mushaf else None
+    def get_transmission(self, obj):
+        return str(obj.transmission.id) if obj.transmission else None
 
-    def get_reciter_account_id(self, obj):
+    def get_reciter_account(self, obj):
         return str(obj.reciter_account.id) if obj.reciter_account else None
 
     def get_total_duration(self, obj):
@@ -590,23 +588,17 @@ class RecitationSerializer(serializers.ModelSerializer):
             list(map(lambda x: x.duration, obj.recitation_surahs.all())), timedelta()
         )
 
-    def to_internal_value(self, data):
-        mushaf_id = data.get("mushaf_id")
-        ret = super().to_internal_value(data)
-        ret["mushaf_id"] = mushaf_id
-        return ret
-
     def create(self, validated_data):
-        from quran.models import Mushaf, RecitationSurah
+        from quran.models import Transmission, RecitationSurah
         from account.models import CustomUser
 
-        mushaf_id = validated_data.pop("mushaf_id")
+        transmission_id = validated_data.pop("transmission")
 
-        mushaf = Mushaf.objects.get(id=mushaf_id)
+        tr = Transmission.objects.get(id=transmission_id)
 
-        validated_data["mushaf"] = mushaf
+        validated_data["transmission"] = tr
         # Use the requesting user as the reciter by default (can be adjusted later via recitation_surah upload).
-        reciter_account_id = validated_data.pop("reciter_account_id")
+        reciter_account_id = validated_data.pop("reciter_account")
         try:
             reciter_user = CustomUser.objects.get(id=reciter_account_id)
         except CustomUser.DoesNotExist:
