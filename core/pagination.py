@@ -8,7 +8,7 @@ class CustomLimitOffsetPagination(LimitOffsetPagination):
     Uses 'limit' and 'offset' parameters for pagination.
     """
 
-    default_limit = 200
+    default_limit = 20
     limit_query_param = "limit"
     offset_query_param = "offset"
     max_limit = 10000

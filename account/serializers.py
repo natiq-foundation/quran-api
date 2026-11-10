@@ -55,6 +55,10 @@ class UserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         digits = 6
         validated_data.pop("password2")
+
+        if validated_data.get("username"):
+            return CustomUser.objects.create_user(**validated_data)
+
         while True:
             username = "u" + get_random_string(digits, "0123456789")
             if not CustomUser.objects.filter(username=username).exists():
