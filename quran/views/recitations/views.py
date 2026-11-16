@@ -1,3 +1,4 @@
+from quran.serializers import RecitationSerializer
 from rest_framework import permissions, viewsets, status, filters, serializers
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
@@ -74,7 +75,7 @@ class RecitationViewSet(viewsets.ModelViewSet):
     queryset = Recitation.objects.all()
     serializer_class = RecitationSerializer
 
-    def get_serializer_class(self):
+    def get_serializer_class(self) -> type[RecitationListSerializer] | type[RecitationSerializer]:
         if self.action == "list":
             from quran.serializers import RecitationListSerializer
 
@@ -128,13 +129,13 @@ class RecitationViewSet(viewsets.ModelViewSet):
             queryset = queryset.prefetch_related("recitation_surahs__timestamps")
         return queryset
 
-    def create(self, request, *args, **kwargs):
+    def create(self, request, *args, **kwargs) -> Response:
         return super().create(request, *args, **kwargs)
 
-    def retrieve(self, request, *args, **kwargs):
+    def retrieve(self, request, *args, **kwargs) -> Response:
         return super().retrieve(request, *args, **kwargs)
 
-    def update(self, request, *args, **kwargs):
+    def update(self, request, *args, **kwargs) -> Response:
         partial = kwargs.pop("partial", False)
         instance = self.get_object()
         if instance.status == "published" and not request.user.is_staff:
@@ -157,7 +158,7 @@ class RecitationViewSet(viewsets.ModelViewSet):
                 )
         return super().update(request, *args, partial=partial, **kwargs)
 
-    def partial_update(self, request, *args, **kwargs):
+    def partial_update(self, request, *args, **kwargs) -> Response:
         return self.update(request, *args, partial=True, **kwargs)
 
     @extend_schema(
@@ -188,7 +189,7 @@ class RecitationViewSet(viewsets.ModelViewSet):
         url_path="track",
         parser_classes=[MultiPartParser, FormParser],
     )
-    def track(self, request, *args, **kwargs):
+    def track(self, request, *args, **kwargs) -> Response:
         from core.utils import upload_mp3_to_s3
         from django.db import transaction
 
@@ -349,7 +350,7 @@ class RecitationViewSet(viewsets.ModelViewSet):
         url_path="track/(?P<track_id>[^/.]+)",
         parser_classes=[MultiPartParser, FormParser],
     )
-    def track_detail(self, request, *args, **kwargs):
+    def track_detail(self, request, *args, **kwargs) -> Response:
         from core.utils import upload_mp3_to_s3
         from django.db import transaction
 

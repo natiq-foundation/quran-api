@@ -1,3 +1,6 @@
+from quran.serializers import AyahSerializerView
+from quran.serializers import AyahSerializer
+from quran.serializers import AyahAddSerializer
 from rest_framework import permissions, viewsets, status, filters, serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -105,7 +108,7 @@ class AyahViewSet(viewsets.ModelViewSet):
         responses={200: AyahSerializerView(many=True)},
     )
     @action(detail=False, methods=["get"], url_path="random")
-    def random(self, request, *args, **kwargs):
+    def random(self, request, *args, **kwargs) -> Response:
         ayah_ids = list(Ayah.objects.order_by("id").values_list("id", flat=True))
         total = len(ayah_ids)
         if total == 0:
@@ -158,12 +161,12 @@ class AyahViewSet(viewsets.ModelViewSet):
         context["include_surah"] = include_surah
         return context
 
-    def get_serializer_class(self):
+    def get_serializer_class(self) -> type[AyahAddSerializer] | type[AyahSerializer] | type[AyahSerializerView]:
         if self.action == "retrieve":
             return AyahSerializerView
         if self.action == "create":
             return AyahAddSerializer
         return AyahSerializer
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer) -> None:
         serializer.save(creator=self.request.user)

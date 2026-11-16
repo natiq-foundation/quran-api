@@ -1,3 +1,4 @@
+from rest_framework.utils.serializer_helpers import ReturnDict
 from rest_framework import serializers
 from django.db import models
 from django.conf.global_settings import LANGUAGES
@@ -24,7 +25,6 @@ from quran.models import (
     RecitationSurah,
 )
 from account.models import CustomUser
-
 
 class RecursiveField(serializers.Serializer):
     def to_representation(self, value):
@@ -157,7 +157,7 @@ class AyahSerializer(serializers.ModelSerializer):
         read_only_fields = ["creator"]
 
     @extend_schema_field(SurahSerializer(allow_null=True))
-    def get_surah(self, instance):
+    def get_surah(self, instance) -> ReturnDict | None:
         include_surah = self.context.get("include_surah")
 
         if include_surah == "every_ayah":
@@ -280,7 +280,7 @@ class WordSerializer(serializers.ModelSerializer):
         fields = ["id", "ayah", "texts"]
         read_only_fields = ["creator"]
 
-    def __init__(self, no_ayah_id, **kwargs):
+    def __init__(self, no_ayah_id, **kwargs) -> None:
         self.no_ayah_id = no_ayah_id
         super().__init__(**kwargs)
 
@@ -305,7 +305,7 @@ class AyahSerializerView(AyahSerializer):
     class Meta(AyahSerializer.Meta):
         fields = AyahSerializer.Meta.fields + ["surah", "rasm_ol_mushaf", "words"]
 
-    def get_rasm_ol_mushaf(self, instance):
+    def get_rasm_ol_mushaf(self, instance) -> ReturnDict:
         m = RomSurahAyahs.objects.filter(surah=instance.surah).first()
 
         return MushafSerializer(m.rasm_ol_mushaf).data
@@ -343,15 +343,15 @@ class AyahTranslationNestedSerializer(serializers.ModelSerializer):
 class LangCodeField(serializers.ChoiceField):
     """A field for ISO 639-1 language codes using Django LANGUAGES."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         # Extract language codes from Django LANGUAGES
         language_codes = [code for code, name in LANGUAGES]
         super().__init__(choices=language_codes, **kwargs)
 
 
 class TranslationCreateSerializer(serializers.ModelSerializer):
-    mushaf_id = serializers.PrimaryKeyRelatedField(
-        source="mushaf", queryset=RasmOlMushaf.objects.all()
+    rasm_ol_mushaf_id = serializers.PrimaryKeyRelatedField(
+        source="rasm_ol_mushaf", queryset=RasmOlMushaf.objects.all()
     )
 
     translator_id = serializers.PrimaryKeyRelatedField(
@@ -362,7 +362,7 @@ class TranslationCreateSerializer(serializers.ModelSerializer):
         model = Translation
         fields = [
             "id",
-            "mushaf_id",
+            "rasm_ol_mushaf_id",
             "translator_id",
             "language",
             "release_date",
@@ -407,13 +407,13 @@ class TranslationSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["creator"]
 
-    def get_transmission_id(self, obj):
+    def get_transmission_id(self, obj) -> str | None:
         return str(obj.transmission.id) if obj.transmission else None
 
-    def get_translator_id(self, obj):
+    def get_translator_id(self, obj) -> str | None:
         return str(obj.translator.id) if obj.translator else None
 
-    def get_language_is_rtl(self, obj):
+    def get_language_is_rtl(self, obj) -> bool:
         code = (obj.language or "").strip().lower()
         base = code.split("-")[0]
         return code in RTL_LANGUAGE_CODES or base in RTL_LANGUAGE_CODES
@@ -574,13 +574,13 @@ class RecitationSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["creator", "get_mushaf_id"]
 
-    def get_track_count(self, obj):
+    def get_track_count(self, obj) -> int:
         return len(list(obj.recitation_surahs.all()))
 
-    def get_transmission(self, obj):
+    def get_transmission(self, obj) -> str | None:
         return str(obj.transmission.id) if obj.transmission else None
 
-    def get_reciter_account(self, obj):
+    def get_reciter_account(self, obj) -> str | None:
         return str(obj.reciter_account.id) if obj.reciter_account else None
 
     def get_total_duration(self, obj):
@@ -674,7 +674,7 @@ class TranslationListSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["creator"]
 
-    def get_transmission_id(self, obj):
+    def get_transmission_id(self, obj) -> str | None:
         return str(obj.transmission.id) if obj.transmission else None
 
     @extend_schema_field(TranslatorDetailSerializer(allow_null=True))
@@ -687,7 +687,7 @@ class TranslationListSerializer(serializers.ModelSerializer):
         name = " ".join(name_parts) if name_parts else obj.translator.username
         return {"id": str(obj.translator.id), "name": name}
 
-    def get_language_is_rtl(self, obj):
+    def get_language_is_rtl(self, obj) -> bool:
         code = (obj.language or "").strip().lower()
         base = code.split("-")[0]
         return code in RTL_LANGUAGE_CODES or base in RTL_LANGUAGE_CODES
@@ -706,7 +706,7 @@ class RecitationSurahSerializer(serializers.ModelSerializer):
             return obj.file.get_absolute_url()
         return None
 
-    def get_surah_id(self, obj):
+    def get_surah_id(self, obj) -> str | None:
         return str(obj.surah.id) if obj.surah else None
 
 
@@ -744,7 +744,7 @@ class TrackDetailSerializer(serializers.ModelSerializer):
             return obj.file.get_absolute_url()
         return None
 
-    def get_surah_id(self, obj):
+    def get_surah_id(self, obj) -> str | None:
         return str(obj.surah.id) if obj.surah else None
 
     def get_words_timestamps(self, obj):
@@ -821,7 +821,7 @@ class RecitationListSerializer(serializers.ModelSerializer):
             "mushaf_id",
         ]
 
-    def get_track_count(self, obj):
+    def get_track_count(self, obj) -> int:
         return len(list(obj.recitation_surahs.all()))
 
     @extend_schema_field(ReciterDetailSerializer(allow_null=True))
@@ -904,7 +904,7 @@ class ProvenanceSerializer(serializers.ModelSerializer):
         fields = ["id", "role", "recipient", "account"]
         read_only_fields = ["creator"]
 
-    def get_recipient(self, obj):
+    def get_recipient(self, obj) -> ReturnDict | None:
         if obj.child_provenance:
             return ProvenanceChildSerializer(obj.child_provenance).data
         return None

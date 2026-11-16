@@ -42,7 +42,7 @@ class UserSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             "display_name": {"required": False},
             "email": {"required": True},
-            "username": {"read_only": True},
+            "username": {"read_only": False},
         }
 
     def validate(self, attrs):

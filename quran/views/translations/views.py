@@ -1,3 +1,4 @@
+from rest_framework.utils.serializer_helpers import ReturnDict
 from rest_framework import permissions, viewsets, status, filters, serializers
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
@@ -119,10 +120,10 @@ class TranslationViewSet(viewsets.ModelViewSet):
             return TranslationUpdateSerializer
         return TranslationSerializer
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer) -> None:
         serializer.save(creator=self.request.user)
 
-    def update(self, request, *args, **kwargs):
+    def update(self, request, *args, **kwargs) -> Response:
         partial = kwargs.pop("partial", False)
         instance = self.get_object()
         if instance.status == "published" and not request.user.is_staff:
@@ -155,7 +156,7 @@ class TranslationViewSet(viewsets.ModelViewSet):
 
         return super().update(request, *args, partial=partial, **kwargs)
 
-    def partial_update(self, request, *args, **kwargs):
+    def partial_update(self, request, *args, **kwargs) -> Response:
         return self.update(request, *args, partial=True, **kwargs)
 
     @extend_schema(
@@ -180,7 +181,7 @@ class TranslationViewSet(viewsets.ModelViewSet):
         url_path="import",
         parser_classes=[MultiPartParser, FormParser],
     )
-    def import_translation(self, request):
+    def import_translation(self, request) -> Response:
         TRANSLATION_UPLOAD_MAX_SIZE = 30 * 1024 * 1024
         file = request.FILES.get("file")
         if file.size > TRANSLATION_UPLOAD_MAX_SIZE:
@@ -214,7 +215,7 @@ class TranslationViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    def retrieve(self, request, *args, **kwargs):
+    def retrieve(self, request, *args, **kwargs) -> Response:
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         data = serializer.data
@@ -237,7 +238,7 @@ class TranslationViewSet(viewsets.ModelViewSet):
         responses={200: AyahTranslationSerializer(many=True)},
     )
     @action(detail=True, methods=["get"], url_path="ayahs")
-    def ayahs(self, request, *args, **kwargs):
+    def ayahs(self, request, *args, **kwargs) -> Response:
         translation = self.get_object()
         # Ensure ayahs are aligned with canonical ayah ordering within the same rasm ol mushaf
         ayah_translations = (
@@ -256,7 +257,7 @@ class TranslationViewSet(viewsets.ModelViewSet):
         paginator = CustomLimitOffsetPagination()
         page = paginator.paginate_queryset(ayah_translations, request)
 
-        def process_bismillah(data):
+        def process_bismillah(data: ReturnDict):
             found_first = False
             for item in data:
                 if not found_first:
@@ -282,7 +283,7 @@ class TranslationViewSet(viewsets.ModelViewSet):
         responses={200: AyahTranslationSerializer},
     )
     @action(detail=True, methods=["get"], url_path="ayahs/(?P<ayah_id>[^/.]+)")
-    def get_ayah_translation(self, request, *args, **kwargs):
+    def get_ayah_translation(self, request, *args, **kwargs) -> Response:
         translation: Translation = self.get_object()
         ayah_id = kwargs.get("ayah_id")
         try:
@@ -316,7 +317,7 @@ class TranslationViewSet(viewsets.ModelViewSet):
         responses={201: AyahTranslationSerializer, 200: AyahTranslationSerializer},
     )
     @action(detail=True, methods=["put", "post"], url_path="ayahs/(?P<ayah_id>[^/.]+)")
-    def modify_ayah_translation(self, request, *args, **kwargs):
+    def modify_ayah_translation(self, request, *args, **kwargs) -> Response:
         translation: Translation = self.get_object()
         ayah_id = kwargs.get("ayah_id")
         serializer = AyahTranslationSerializer(

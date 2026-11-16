@@ -76,7 +76,7 @@ class WordViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(ayah__id=ayah_id)
         return queryset
 
-    def create(self, request, *args, **kwargs):
+    def create(self, request, *args, **kwargs) -> Response:
         data = request.data.copy()
         if not data.get("ayah_id"):
             ayah_id = request.query_params.get("ayah_id")
@@ -90,5 +90,5 @@ class WordViewSet(viewsets.ModelViewSet):
             serializer.data, status=status.HTTP_201_CREATED, headers=headers
         )
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer) -> None:
         serializer.save(creator=self.request.user)
