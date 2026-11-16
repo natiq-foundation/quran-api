@@ -3697,7 +3697,8 @@ components:
           minimum: -2147483648
           description: Character count of the ayah text (joined words)
         rasm_ol_mushaf:
-          type: string
+          type: object
+          additionalProperties: {}
           readOnly: true
         words:
           type: array
@@ -4111,7 +4112,9 @@ components:
           type: string
           maxLength: 255
         recipient:
-          type: string
+          type: object
+          additionalProperties: {}
+          nullable: true
           readOnly: true
         account:
           type: string
@@ -4150,7 +4153,7 @@ components:
           type: string
           nullable: true
         track_count:
-          type: string
+          type: integer
           readOnly: true
         total_duration:
           type: string
@@ -4239,9 +4242,11 @@ components:
           readOnly: true
         transmission_id:
           type: string
+          nullable: true
           readOnly: true
         translator_id:
           type: string
+          nullable: true
           readOnly: true
         language:
           enum:
@@ -4449,7 +4454,7 @@ components:
             * `zh-hant` - zh-hant
           x-spec-enum-id: 6eefa8d93658b068
         language_is_rtl:
-          type: string
+          type: boolean
           readOnly: true
         release_date:
           type: string
@@ -4481,9 +4486,10 @@ components:
           readOnly: true
         username:
           type: string
-          readOnly: true
           description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
             only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
         password:
           type: string
           writeOnly: true
@@ -4558,7 +4564,9 @@ components:
           type: string
           maxLength: 255
         recipient:
-          type: string
+          type: object
+          additionalProperties: {}
+          nullable: true
           readOnly: true
         account:
           type: string
@@ -4613,7 +4621,7 @@ components:
           type: string
           nullable: true
         track_count:
-          type: string
+          type: integer
           readOnly: true
         total_duration:
           type: string
@@ -4667,7 +4675,7 @@ components:
         recitation_type:
           type: string
         track_count:
-          type: string
+          type: integer
           readOnly: true
         created_at:
           type: string
@@ -4905,9 +4913,11 @@ components:
           readOnly: true
         transmission_id:
           type: string
+          nullable: true
           readOnly: true
         translator_id:
           type: string
+          nullable: true
           readOnly: true
         language:
           enum:
@@ -5115,7 +5125,7 @@ components:
             * `zh-hant` - zh-hant
           x-spec-enum-id: 6eefa8d93658b068
         language_is_rtl:
-          type: string
+          type: boolean
           readOnly: true
         release_date:
           type: string
@@ -5151,7 +5161,7 @@ components:
           type: string
           format: uuid
           readOnly: true
-        mushaf_id:
+        rasm_ol_mushaf_id:
           type: string
           format: uuid
         translator_id:
@@ -5384,7 +5394,7 @@ components:
       required:
       - id
       - language
-      - mushaf_id
+      - rasm_ol_mushaf_id
       - translator_id
     TranslationList:
       type: object
@@ -5395,6 +5405,7 @@ components:
           readOnly: true
         transmission_id:
           type: string
+          nullable: true
           readOnly: true
         translator:
           allOf:
@@ -5607,7 +5618,7 @@ components:
             * `zh-hant` - Traditional Chinese
           x-spec-enum-id: e7e79f7d82de1282
         language_is_rtl:
-          type: string
+          type: boolean
           readOnly: true
         release_date:
           type: string
@@ -5912,9 +5923,10 @@ components:
           readOnly: true
         username:
           type: string
-          readOnly: true
           description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
             only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
         password:
           type: string
           writeOnly: true
