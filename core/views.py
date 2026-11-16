@@ -1,3 +1,5 @@
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import DjangoModelPermissions
 from django.http import HttpResponse
 from rest_framework import viewsets, permissions
 from .models import Request, Notification
@@ -79,7 +81,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
     permission_classes = [DjangoModelPermissions]
     pagination_class = CustomLimitOffsetPagination
 
-    def get_permissions(self):
+    def get_permissions(self) -> list[DjangoModelPermissions] | list[IsAuthenticated]:
         if self.action == "me":
             return [IsAuthenticated()]
         return [DjangoModelPermissions()]
@@ -90,7 +92,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
         responses={200: NotificationSerializer(many=True)},
     )
     @action(detail=False, methods=["get"])
-    def me(self, request):
+    def me(self, request) -> Response:
         notifications = Notification.objects.filter(user=request.user).order_by(
             "-created_at"
         )
@@ -113,7 +115,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
         responses={200: OpenApiTypes.OBJECT},
     )
     @action(detail=False, methods=["get"])
-    def viewed(self, request):
+    def viewed(self, request) -> Response:
         notifications = Notification.objects.filter(
             user=request.user, status=Notification.STATUS_GOT
         )
@@ -141,7 +143,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
         },
     )
     @action(detail=False, methods=["get"])
-    def opened(self, request):
+    def opened(self, request) -> Response:
         id = request.query_params.get("id")
         if not id:
             return Response({"detail": "Notification id is required."}, status=400)
@@ -229,7 +231,7 @@ class HealthCheckResponseSerializer(serializers.Serializer):
 )
 @api_view(["GET"])
 @permission_classes([AllowAny])
-def health_check(request):
+def health_check(request) -> Response:
     """
     Health check endpoint that verifies the status of:
     - PostgreSQL database connection

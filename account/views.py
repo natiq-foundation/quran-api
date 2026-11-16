@@ -82,7 +82,7 @@ class LogoutAllResponseSerializer(serializers.Serializer):
 class LoginView(KnoxLoginView):
     permission_classes = (permissions.AllowAny,)
 
-    def post(self, request, format=None):
+    def post(self, request, format=None) -> Response:
         serializer = AuthTokenSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
@@ -135,7 +135,7 @@ class AuthViewSet(viewsets.GenericViewSet):
         ],
     )
     @action(methods=["post"], detail=False)
-    def register(self, request):
+    def register(self, request) -> Response:
         """
         Register a new user with username, password, and email.
         Returns user data and Knox token upon successful registration.
@@ -171,7 +171,7 @@ class LogoutView(KnoxLogoutView):
             )
         ],
     )
-    def post(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs) -> Response:
         return super().post(request, *args, **kwargs)
 
 
@@ -195,7 +195,7 @@ class LogoutAllView(KnoxLogoutAllView):
             )
         ],
     )
-    def post(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs) -> Response:
         return super().post(request, *args, **kwargs)
 
 
@@ -243,7 +243,7 @@ class RegisterView(APIView):
             ),
         ],
     )
-    def post(self, request):
+    def post(self, request) -> Response:
         """
         Register a new user with username, password, and email.
         Returns user data and Knox token upon successful registration.
@@ -273,11 +273,11 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
     lookup_field = "id"
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer) -> None:
         serializer.save()
 
     @action(detail=True, methods=["get", "post"], url_path="names")
-    def names(self, request, *args, **kwargs):
+    def names(self, request, *args, **kwargs) -> Response | None:
         user: CustomUser = self.get_object()
         if request.method == "GET":
             serializer = UserNameSerializer(user.names, many=True)
@@ -303,7 +303,7 @@ class UserViewSet(viewsets.ModelViewSet):
             methods=["put", "patch", "get"],
             url_path="names/(?P<name_id>[0-9a-f-]+)",
         )
-        def get_edit_name(self, request, name_id=None, *args, **kwargs):
+        def get_edit_name(self, request, name_id=None, *args, **kwargs) -> Response:
             user: CustomUser = self.get_object()
 
             if request.method == "GET":
@@ -323,7 +323,7 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response({"status": "updated", "data": serializer.data})
 
         @action(detail=True, methods=["delete"], url_path="names/(?P<name_id>[^/.]+)")
-        def delete_name(self, request, name_id=None, *args, **kwargs):
+        def delete_name(self, request, name_id=None, *args, **kwargs) -> Response:
             user: CustomUser = self.get_object()
             try:
                 user_name = UserName.objects.get(id=name_id, user=user)
@@ -367,7 +367,7 @@ class ProfileViewSet(viewsets.mixins.RetrieveModelMixin, viewsets.GenericViewSet
         description="GET: Retrieve the current user's profile. POST: Update the current user's profile information.",
     )
     @action(detail=False, methods=["get", "post"], serializer_class=ProfileSerializer)
-    def me(self, request):
+    def me(self, request) -> Response | None:
         if request.method == "GET":
             serializer = self.get_serializer(self.request.user)
             return Response(serializer.data)

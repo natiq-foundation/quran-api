@@ -10,7 +10,7 @@ class Command(BaseCommand):
         "Set DJANGO_SUPERUSER_PASSWORD_RESET=1 to reset password if user exists."
     )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         username = os.environ.get("DJANGO_SUPERUSER_USERNAME")
         email = os.environ.get("DJANGO_SUPERUSER_EMAIL")
         password = os.environ.get("DJANGO_SUPERUSER_PASSWORD")

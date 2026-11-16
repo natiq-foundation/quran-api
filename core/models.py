@@ -28,11 +28,11 @@ class Request(models.Model):
     class Meta:
         ordering = ["created_at"]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Request: {self.error_name} - Status: {self.status_code} - Created at: {self.created_at} - Detail: {self.detail} - Account ID: {self.account_id} - Request token: {self.request_token} - Request user agent: {self.request_user_agent} - Request IPv4: {self.request_ipv4} - Request URL: {self.request_url} - Request controller: {self.request_controller} - Request action: {self.request_action} - Request ID: {self.request_id} - Request body: {self.request_body} - Request body content type: {self.request_body_content_type}"
 
 
-def _get_random_filename(instance, filename):
+def _get_random_filename(instance, filename) -> str:
     model_name = instance.__class__.__name__.lower()
     ext = filename.split(".")[-1]
     new_filename = f"{uuid.uuid4()}.{ext}"
@@ -78,10 +78,10 @@ class File(models.Model):
             models.Index(fields=["file_hash"]),  # Add index for faster hash lookups
         ]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.upload_name} ({self.format})"
 
-    def get_absolute_url(self):
+    def get_absolute_url(self) -> str:
         from django.conf import settings
 
         return f"{settings.AWS_S3_ENDPOINT_URL}/{settings.AWS_STORAGE_BUCKET_NAME}/recitations/{self.s3_uuid}.{self.format}"
@@ -133,5 +133,5 @@ class Notification(models.Model):
     class Meta:
         ordering = ["-created_at"]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Notification for {self.user} - {self.resource_controller}.{self.resource_action} - {self.status}"

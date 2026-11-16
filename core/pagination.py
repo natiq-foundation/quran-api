@@ -13,7 +13,7 @@ class CustomLimitOffsetPagination(LimitOffsetPagination):
     offset_query_param = "offset"
     max_limit = 10000
 
-    def get_paginated_response(self, data):
+    def get_paginated_response(self, data) -> Response:
         """
         Return only the data without pagination metadata.
         """
