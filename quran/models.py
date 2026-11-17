@@ -1,3 +1,4 @@
+from django.db.models.fields import TextField
 from django.db import models
 from account.models import CustomUser
 from core.models import File
@@ -40,7 +41,7 @@ class RasmOlMushaf(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
+    def __str__(self) -> TextField:
         return self.name
 
 
@@ -146,7 +147,7 @@ class Surah(models.Model):
         # TODO: Check this later
         # unique_together = ["rasm_ol_mushafs", "number"]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.number}"
 
 
@@ -175,10 +176,10 @@ class Ayah(models.Model):
         ordering = ["number"]
         unique_together = ["surah", "number"]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.number}"
 
-    def calculate_length(self):
+    def calculate_length(self) -> int:
         """Calculate the character count of the ayah text by joining all words."""
         words = self.words.all().order_by("id")
         if not words.exists():
@@ -191,7 +192,7 @@ class Ayah(models.Model):
 
         return len(text)
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs) -> None:
         """Override save to automatically calculate and update length."""
         # Only calculate length if the ayah already has a primary key (is saved)
         if self.pk:
@@ -211,14 +212,14 @@ class Word(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs) -> None:
         """Override save to update the parent ayah's length."""
         super().save(*args, **kwargs)
         # Update the parent ayah's length
         self.ayah.length = self.ayah.calculate_length()
         self.ayah.save(update_fields=["length"])
 
-    def delete(self, *args, **kwargs):
+    def delete(self, *args, **kwargs) -> None:
         """Override delete to update the parent ayah's length."""
         ayah = self.ayah
         super().delete(*args, **kwargs)
@@ -242,7 +243,7 @@ class WordText(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
+    def __str__(self) -> TextField:
         return self.text
 
 
@@ -275,7 +276,7 @@ class Translation(models.Model):
     class Meta:
         unique_together = ["translator", "language"]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.mushaf.name} - {self.language} by {self.translator.username}"
 
 
@@ -300,7 +301,7 @@ class AyahTranslation(models.Model):
     # class Meta:
     #    unique_together = ['translation', 'ayah']
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.translation.language} - {self.ayah}"
 
 
@@ -329,7 +330,7 @@ class Takhtit(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.account)
 
 
@@ -359,7 +360,7 @@ class AyahBreaker(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.type} - {self.ayah}"
 
 
@@ -392,7 +393,7 @@ class WordBreaker(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.type} - {self.word}"
 
 
@@ -419,7 +420,7 @@ class Recitation(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f"Recitation by {self.reciter_account.username} on {self.recitation_date}"
         )
@@ -447,7 +448,7 @@ class RecitationSurah(models.Model):
     class Meta:
         unique_together = ["recitation", "surah"]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.recitation} - Surah {self.surah.number}"
 
 
@@ -473,7 +474,7 @@ class RecitationSurahTimestamp(models.Model):
     class Meta:
         ordering = ["start_time"]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Timestamp for {self.recitation_surah} at {self.start_time}"
 
 

@@ -26,7 +26,7 @@ from core.models import Notification
 
 
 @shared_task(bind=True, serializer="json", name="forced-alignment-result")
-def forced_alignment_result(self, words_timestamps):
+def forced_alignment_result(self, words_timestamps) -> str:
     try:
         response = requests.get(words_timestamps, timeout=30)
         response.raise_for_status()
@@ -200,7 +200,7 @@ def forced_alignment(self, audio_url, text, additional):
 
 
 @shared_task
-def import_mushaf_task(quran_data, user_id):
+def import_mushaf_task(quran_data, user_id) -> str:
     User = get_user_model()
     user = User.objects.get(id=user_id)
     mushaf_data = quran_data["mushaf"]
@@ -336,7 +336,7 @@ def import_mushaf_task(quran_data, user_id):
 
 
 @shared_task
-def import_translation_task(translation_data, user_id):
+def import_translation_task(translation_data, user_id) -> str:
     User = get_user_model()
     user = User.objects.get(id=user_id)
     try:

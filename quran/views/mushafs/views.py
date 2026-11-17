@@ -14,7 +14,6 @@ from quran.serializers import MushafSerializer, TransmissionSerializer
 
 import json
 
-
 @extend_schema_view(
     list=extend_schema(
         summary="List all Mushafs (Quranic manuscripts/editions)",
@@ -57,10 +56,10 @@ class MushafViewSet(viewsets.ModelViewSet):
 
         return query
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer) -> None:
         serializer.save(creator=self.request.user)
 
-    def update(self, request, *args, **kwargs):
+    def update(self, request, *args, **kwargs) -> Response:
         partial = kwargs.pop("partial", False)
         instance = self.get_object()
         if instance.status == "published" and not request.user.is_staff:
@@ -83,7 +82,7 @@ class MushafViewSet(viewsets.ModelViewSet):
                 )
         return super().update(request, *args, partial=partial, **kwargs)
 
-    def partial_update(self, request, *args, **kwargs):
+    def partial_update(self, request, *args, **kwargs) -> Response:
         return self.update(request, *args, partial=True, **kwargs)
 
     @extend_schema(
@@ -109,7 +108,7 @@ class MushafViewSet(viewsets.ModelViewSet):
         parser_classes=[MultiPartParser, FormParser],
         permission_classes=[permissions.IsAdminUser],
     )
-    def import_mushaf(self, request):
+    def import_mushaf(self, request) -> Response:
         MUSHAF_UPLOAD_MAX_SIZE = 30 * 1024 * 1024
         file = request.FILES.get("file")
         if not file:
@@ -148,7 +147,7 @@ class MushafViewSet(viewsets.ModelViewSet):
         methods=["get", "post"],
         url_path="transmissions",
     )
-    def get_transmissions(self, request, *args, **kwargs):
+    def get_transmissions(self, request, *args, **kwargs) -> Response:
         mushaf: RasmOlMushaf = self.get_object()
 
         if request.method.lower() == "get":
@@ -176,7 +175,7 @@ class MushafViewSet(viewsets.ModelViewSet):
         methods=["get", "post", "delete"],
         url_path="transmissions/(?P<transmission_id>[^/.]+)",
     )
-    def get_or_edit_or_delete_transmission(self, request, *args, **kwargs):
+    def get_or_edit_or_delete_transmission(self, request, *args, **kwargs) -> Response:
         mushaf: RasmOlMushaf = self.get_object()
         transmission_id = kwargs.get("transmission_id")
         validate_uuid(transmission_id)

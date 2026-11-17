@@ -8,7 +8,7 @@ from rest_framework.exceptions import ValidationError
 
 
 # TODO: maybe change this into multi file type upload in the future
-def upload_mp3_to_s3(file_obj, uploader, folder="recitations"):
+def upload_mp3_to_s3(file_obj, uploader, folder: str="recitations"):
     """
     Uploads an MP3 file to S3 and creates a CoreFile record.
     Returns the CoreFile instance.
@@ -70,7 +70,7 @@ def upload_mp3_to_s3(file_obj, uploader, folder="recitations"):
     return new_file
 
 
-def validate_uuid(input):
+def validate_uuid(input) -> None:
     try:
         uuid.UUID(input)
     except ValueError:

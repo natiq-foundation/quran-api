@@ -22,14 +22,14 @@ from quran.serializers import (
 
 
 class DictCompare:
-    def __init__(self, first_dict, second_dict):
+    def __init__(self, first_dict: dict[str, int | None], second_dict: dict[str, int]) -> None:
         self.first = first_dict
         self.second = second_dict
 
-    def update_second_dict(self, new_second):
+    def update_second_dict(self, new_second: dict[str, int]) -> None:
         self.second = new_second
 
-    def compare_two_dicts_with_condition(self, condition):
+    def compare_two_dicts_with_condition(self, condition) -> bool:
         """
         condition: function
         """
@@ -102,7 +102,7 @@ class TakhtitViewSet(viewsets.ModelViewSet):
     ordering = ["-created_at"]
     lookup_field = "id"
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer) -> None:
         rasm_ol_mushaf = self.request.data.get("rasm_ol_mushaf")
         account_id = self.request.data.get("account")
         from quran.models import RasmOlMushaf
@@ -143,7 +143,7 @@ class TakhtitViewSet(viewsets.ModelViewSet):
         methods=["get"],
         url_path="ayahs_breakers",
     )
-    def ayahs_breakers(self, request, id=None):
+    def ayahs_breakers(self, request, id=None) -> Response:
         breaker_keys = ["page", "juz", "hizb", "rub", "manzil"]
 
         into_int_or_none = lambda x: int(x) if (x is not None) else x
@@ -236,7 +236,7 @@ class TakhtitViewSet(viewsets.ModelViewSet):
         responses={201: AyahBreakerSerializer},
     )
     @ayahs_breakers.mapping.post
-    def add_ayahs_breaker(self, request, id=None):
+    def add_ayahs_breaker(self, request, id=None) -> Response:
         takhtit = self.get_object()
         data = request.data.copy()
         ayah_id = data.pop("ayah_id", None)
@@ -286,7 +286,7 @@ class TakhtitViewSet(viewsets.ModelViewSet):
     @action(
         detail=True, methods=["get"], url_path="ayahs_breakers/(?P<breaker_id>[^/.]+)"
     )
-    def retrieve_ayahs_breaker(self, request, id=None, breaker_id=None):
+    def retrieve_ayahs_breaker(self, request, id=None, breaker_id=None) -> Response:
         takhtit = self.get_object()
         breaker = AyahBreaker.objects.filter(takhtit=takhtit, id=breaker_id).first()
         if not breaker:
@@ -300,7 +300,7 @@ class TakhtitViewSet(viewsets.ModelViewSet):
         responses={200: WordBreakersResponseSerializer(many=True)},
     )
     @action(detail=True, methods=["get"], url_path="words_breakers")
-    def words_breakers(self, request, id=None):
+    def words_breakers(self, request, id=None) -> Response:
         takhtit = self.get_object()
         from quran.models import WordBreaker, Word
 
@@ -339,7 +339,7 @@ class TakhtitViewSet(viewsets.ModelViewSet):
         responses={201: WordBreakerDetailResponseSerializer},
     )
     @words_breakers.mapping.post
-    def add_words_breaker(self, request, id=None):
+    def add_words_breaker(self, request, id=None) -> Response:
         takhtit = self.get_object()
         data = request.data.copy()
         word_id = data.pop("word_id", None)
@@ -388,7 +388,7 @@ class TakhtitViewSet(viewsets.ModelViewSet):
     @action(
         detail=True, methods=["get"], url_path="words_breakers/(?P<breaker_id>[^/.]+)"
     )
-    def retrieve_words_breaker(self, request, id=None, breaker_id=None):
+    def retrieve_words_breaker(self, request, id=None, breaker_id=None) -> Response:
         from quran.models import WordBreaker
 
         takhtit = self.get_object()
@@ -433,7 +433,7 @@ class TakhtitViewSet(viewsets.ModelViewSet):
         url_path="import",
         parser_classes=[MultiPartParser, FormParser],
     )
-    def import_breakers(self, request, id=None):
+    def import_breakers(self, request, id=None) -> Response:
         import json
         from quran.models import Ayah, AyahBreaker, Surah
 

@@ -1,3 +1,5 @@
+from quran.serializers import ProvenanceSerializer
+from quran.serializers import ProvenanceAddSerializer
 from rest_framework import permissions, viewsets, status, filters, serializers
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
@@ -30,12 +32,12 @@ class ProvenanceViewSet(viewsets.ModelViewSet):
     pagination_class = CustomLimitOffsetPagination
     lookup_field = "id"
 
-    def get_serializer_class(self):
+    def get_serializer_class(self) -> type[ProvenanceAddSerializer] | type[ProvenanceSerializer]:
         if self.action == "create":
             return ProvenanceAddSerializer
         return ProvenanceSerializer
 
-    def update(self, request, *args, **kwargs):
+    def update(self, request, *args, **kwargs) -> Response:
         try:
             provenance_id = kwargs.get("id")
             provenance = Provenance.objects.get(id=provenance_id)

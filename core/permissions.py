@@ -14,7 +14,7 @@ class LimitedFieldEditPermission(permissions.BasePermission):
 
     message = ""
 
-    def has_permission(self, request, view):
+    def has_permission(self, request, view) -> bool:
         if request.method in permissions.SAFE_METHODS:
             return True
         if request.user.is_staff:

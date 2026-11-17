@@ -1,3 +1,5 @@
+from quran.serializers import SurahSerializer
+from quran.serializers import SurahDetailSerializer
 from rest_framework import permissions, viewsets, status, filters, serializers
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
@@ -64,7 +66,7 @@ class SurahViewSet(viewsets.ModelViewSet):
             return RasmOlMushaf.objects.filter(id=rasm_ol_mushaf_id).first()
         return None
 
-    def get_serializer_class(self):
+    def get_serializer_class(self) -> type[SurahDetailSerializer] | type[SurahSerializer]:
         if self.action == "retrieve":
             return SurahDetailSerializer
         return SurahSerializer
@@ -100,13 +102,13 @@ class SurahViewSet(viewsets.ModelViewSet):
             )
         return queryset.order_by("number").distinct()
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer) -> None:
         last_surah = Surah.objects.order_by("-number").first()
         next_number = 1 if last_surah is None else last_surah.number + 1
         serializer.save(creator=self.request.user, number=next_number)
 
     @action(detail=True, methods=["post", "get"], url_path="names")
-    def names(self, request, *args, **kwargs):
+    def names(self, request, *args, **kwargs) -> Response:
         surah: Surah = self.get_object()
         new_surah_name = request.data
 
@@ -134,7 +136,7 @@ class SurahViewSet(viewsets.ModelViewSet):
     @action(
         detail=True, methods=["post", "delete"], url_path="names/(?P<name_id>[^/.]+)"
     )
-    def edit_name(self, request, *args, **kwargs):
+    def edit_name(self, request, *args, **kwargs) -> Response:
         surah: Surah = self.get_object()
         name_id = kwargs.get("name_id")
         new_surah_name = request.data
