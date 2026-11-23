@@ -310,8 +310,14 @@ class AyahSerializerView(AyahSerializer):
     class Meta(AyahSerializer.Meta):
         fields = AyahSerializer.Meta.fields + ["surah", "rasm_ol_mushaf", "words"]
 
-    def get_rasm_ol_mushaf(self, instance) -> ReturnDict:
-        m = RomSurahAyahs.objects.filter(surah=instance.surah).first()
+    def get_rasm_ol_mushaf(self, instance) -> ReturnDict | None:
+        mappings = RomSurahAyahs.objects.filter(surah=instance.surah)
+        mushaf_slug = self.context.get("rasm_ol_mushaf")
+        if mushaf_slug:
+            mappings = mappings.filter(rasm_ol_mushaf__slug=mushaf_slug)
+        m = mappings.select_related("rasm_ol_mushaf").first()
+        if m is None:
+            return None
 
         return MushafSerializer(m.rasm_ol_mushaf).data
 
