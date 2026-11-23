@@ -31,7 +31,14 @@ from quran.serializers import (
                 location=OpenApiParameter.QUERY,
                 required=True,
                 description="Slug of the Rasm Ol Mushaf to filter Surahs by. Common value: 'hafs'. Any string is accepted. (e.g. 'hafs', 'warsh', etc.)",
-            )
+            ),
+            OpenApiParameter(
+                name="search",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Search Surahs by any of their names (name, pronunciation, translation, or transliteration), number, period, or search terms.",
+            ),
         ],
         tags=["general", "surahs"],
     ),
@@ -55,7 +62,15 @@ class SurahViewSet(viewsets.ModelViewSet):
         filters.SearchFilter,
         filters.OrderingFilter,
     ]
-    search_fields = ["period", "number"]  # Add names field
+    search_fields = [
+        "names__name",
+        "names__pronunciation",
+        "names__translation",
+        "names__transliteration",
+        "search_terms",
+        "period",
+        "number",
+    ]
     ordering_fields = ["created_at"]
     pagination_class = CustomLimitOffsetPagination
     lookup_field = "id"
@@ -86,9 +101,10 @@ class SurahViewSet(viewsets.ModelViewSet):
             queryset = queryset.prefetch_related(
                 "rom_surah_ayahs_surah",
                 "ayahs__words",
+                "names",
             ).only(*surah_fields)
         else:
-            queryset = queryset.prefetch_related("rom_surah_ayahs_surah").only(
+            queryset = queryset.prefetch_related("rom_surah_ayahs_surah", "names").only(
                 *surah_fields
             )
         mushaf_slug = self.request.query_params.get("rasm_ol_mushaf")
