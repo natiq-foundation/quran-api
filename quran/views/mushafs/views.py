@@ -142,6 +142,18 @@ class MushafViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(
+        methods=["GET"],
+        summary="List transmissions for this Mushaf",
+        request=None,
+        responses={200: TransmissionSerializer(many=True)},
+    )
+    @extend_schema(
+        methods=["POST"],
+        summary="Create a transmission for this Mushaf",
+        request=TransmissionSerializer,
+        responses={200: TransmissionSerializer},
+    )
     @action(
         detail=True,
         methods=["get", "post"],
@@ -170,6 +182,29 @@ class MushafViewSet(viewsets.ModelViewSet):
 
         return Response(TransmissionSerializer(trans).data)
 
+    @extend_schema(
+        methods=["GET"],
+        summary="Retrieve a transmission for this Mushaf",
+        request=None,
+        responses={200: TransmissionSerializer},
+    )
+    @extend_schema(
+        methods=["POST"],
+        summary="Create a transmission for this Mushaf",
+        request=TransmissionSerializer,
+        responses={200: TransmissionSerializer},
+    )
+    @extend_schema(
+        methods=["DELETE"],
+        summary="Delete a transmission for this Mushaf",
+        request=None,
+        responses={
+            200: {
+                "type": "object",
+                "properties": {"status": {"type": "string", "example": "Deleted"}},
+            }
+        },
+    )
     @action(
         detail=True,
         methods=["get", "post", "delete"],
