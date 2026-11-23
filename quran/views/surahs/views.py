@@ -123,6 +123,23 @@ class SurahViewSet(viewsets.ModelViewSet):
         next_number = 1 if last_surah is None else last_surah.number + 1
         serializer.save(creator=self.request.user, number=next_number)
 
+    @extend_schema(
+        methods=["GET"],
+        summary="List names for this Surah",
+        request=None,
+        responses={200: SurahNameWithIdSerializer(many=True)},
+    )
+    @extend_schema(
+        methods=["POST"],
+        summary="Create a name for this Surah",
+        request=SurahNameSerializer,
+        responses={
+            200: {
+                "type": "object",
+                "properties": {"status": {"type": "string", "example": "created"}},
+            }
+        },
+    )
     @action(detail=True, methods=["post", "get"], url_path="names")
     def names(self, request, *args, **kwargs) -> Response:
         surah: Surah = self.get_object()
@@ -149,6 +166,28 @@ class SurahViewSet(viewsets.ModelViewSet):
 
         return Response({"status": "created"})
 
+    @extend_schema(
+        methods=["POST"],
+        summary="Update a name for this Surah",
+        request=SurahNameSerializer,
+        responses={
+            200: {
+                "type": "object",
+                "properties": {"status": {"type": "string", "example": "updated"}},
+            }
+        },
+    )
+    @extend_schema(
+        methods=["DELETE"],
+        summary="Delete a name for this Surah",
+        request=None,
+        responses={
+            200: {
+                "type": "object",
+                "properties": {"status": {"type": "string", "example": "Removed"}},
+            }
+        },
+    )
     @action(
         detail=True, methods=["post", "delete"], url_path="names/(?P<name_id>[^/.]+)"
     )

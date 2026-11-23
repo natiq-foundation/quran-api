@@ -134,6 +134,8 @@ class SurahSerializer(serializers.ModelSerializer):
 
 
 class SurahInAyahSerializer(serializers.ModelSerializer):
+    names = SurahNameWithIdSerializer(read_only=True, many=True)
+
     class Meta:
         model = Surah
         fields = ["id", "names"]
@@ -872,8 +874,9 @@ class AyahBreakersResponseSerializer(serializers.Serializer):
     """Serializer for the ayahs_breakers endpoint response"""
 
     id = serializers.UUIDField(help_text="id of the ayah")
-    surah = serializers.IntegerField(help_text="Surah number")
-    ayah = serializers.IntegerField(help_text="Ayah number")
+    surah_id = serializers.UUIDField(help_text="id of the surah")
+    surah_number = serializers.IntegerField(help_text="Surah number")
+    ayah_number = serializers.IntegerField(help_text="Ayah number")
     length = serializers.IntegerField(help_text="Ayah text length")
     juz = serializers.IntegerField(
         allow_null=True, help_text="Juz number (null if not a juz breaker)"
