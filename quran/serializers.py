@@ -70,8 +70,13 @@ class MushafSerializer(serializers.ModelSerializer):
 class SurahNameSerializer(serializers.ModelSerializer):
     class Meta:
         model = SurahName
-        fields = ["id", "name", "pronunciation", "translation", "transliteration"]
+        fields = ["name", "pronunciation", "translation", "transliteration"]
         read_only_fields = ["creator"]
+
+
+class SurahNameWithIdSerializer(SurahNameSerializer):
+    class Meta(SurahNameSerializer.Meta):
+        fields = ["id", *SurahNameSerializer.Meta.fields]
 
 
 class SurahBismillahSerializer(serializers.Serializer):

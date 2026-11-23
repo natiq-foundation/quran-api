@@ -1,6 +1,6 @@
 from quran.serializers import SurahSerializer
 from quran.serializers import SurahDetailSerializer
-from rest_framework import permissions, viewsets, status, filters, serializers
+from rest_framework import permissions, viewsets, filters, serializers
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import (
@@ -8,7 +8,6 @@ from drf_spectacular.utils import (
     extend_schema_view,
     OpenApiTypes,
     OpenApiParameter,
-    OpenApiExample,
 )
 from rest_framework.decorators import action
 from core import permissions as core_permissions
@@ -18,6 +17,7 @@ from quran.serializers import (
     SurahSerializer,
     SurahDetailSerializer,
     SurahNameSerializer,
+    SurahNameWithIdSerializer,
 )
 
 
@@ -113,7 +113,7 @@ class SurahViewSet(viewsets.ModelViewSet):
         new_surah_name = request.data
 
         if request.method.lower() == "get":
-            serializer = SurahNameSerializer(surah.names.all(), many=True)
+            serializer = SurahNameWithIdSerializer(surah.names.all(), many=True)
             return Response(serializer.data)
 
         serializer = SurahNameSerializer(data=(new_surah_name | {"surah": surah.id}))
