@@ -59,25 +59,8 @@ class DictCompare:
     ),
     create=extend_schema(
         summary="Create a new Takhtit record",
-        description="Create a new Takhtit. Requires mushaf_id and account_id in the request body.",
-        request={
-            "application/json": {
-                "type": "object",
-                "properties": {
-                    "mushaf_id": {
-                        "type": "string",
-                        "format": "id",
-                        "description": "id of the mushaf to link.",
-                    },
-                    "account_id": {
-                        "type": "string",
-                        "format": "id",
-                        "description": "id of the account to link.",
-                    },
-                },
-                "required": ["mushaf_id", "account_id"],
-            }
-        },
+        description="Create a new Takhtit. Requires rasm_ol_mushaf and account in the request body.",
+        request=TakhtitSerializer,
     ),
     update=extend_schema(summary="Update an existing Takhtit record"),
     partial_update=extend_schema(summary="Partially update a Takhtit record"),

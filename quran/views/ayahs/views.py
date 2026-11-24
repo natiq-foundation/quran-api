@@ -29,7 +29,18 @@ import random
             ),
         ],
     ),
-    retrieve=extend_schema(summary="Retrieve a specific Ayah by id"),
+    retrieve=extend_schema(
+        summary="Retrieve a specific Ayah by id",
+        parameters=[
+            OpenApiParameter(
+                name="rasm_ol_mushaf",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Slug of the Rasm Ol Mushaf to return on the ayah. If omitted, the associated rasm ol mushaf is left unchanged. (e.g. 'hafs', 'warsh', etc.)",
+            ),
+        ],
+    ),
     create=extend_schema(summary="Create a new Ayah record"),
     update=extend_schema(summary="Update an existing Ayah record"),
     partial_update=extend_schema(summary="Partially update an Ayah record"),
@@ -103,13 +114,26 @@ class AyahViewSet(viewsets.ModelViewSet):
                 location=OpenApiParameter.QUERY,
                 required=False,
                 description="Number of random ayahs to return. Defaults to 1.",
-            )
+            ),
+            OpenApiParameter(
+                name="rasm_ol_mushaf",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Slug of the Rasm Ol Mushaf to pick ayahs from and return. If omitted, any ayah is eligible and the associated rasm ol mushaf is left unchanged. (e.g. 'hafs', 'warsh', etc.)",
+            ),
         ],
         responses={200: AyahSerializerView(many=True)},
     )
     @action(detail=False, methods=["get"], url_path="random")
     def random(self, request, *args, **kwargs) -> Response:
-        ayah_ids = list(Ayah.objects.order_by("id").values_list("id", flat=True))
+        ayahs = Ayah.objects.order_by("id")
+        mushaf_slug = request.query_params.get("rasm_ol_mushaf")
+        if mushaf_slug:
+            ayahs = ayahs.filter(
+                rom_surah_ayahs_ayah__rasm_ol_mushaf__slug=mushaf_slug
+            ).distinct()
+        ayah_ids = list(ayahs.values_list("id", flat=True))
         total = len(ayah_ids)
         if total == 0:
             return Response(
@@ -153,12 +177,15 @@ class AyahViewSet(viewsets.ModelViewSet):
 
         text_format = self.request.query_params.get("text_format", "text")
         include_surah = self.request.query_params.get("include_surah", "first_ayahs")
+        rasm_ol_mushaf = self.request.query_params.get("rasm_ol_mushaf")
 
         if text_format not in ["text", "word"]:
             text_format = "text"
         context["text_format"] = text_format
 
         context["include_surah"] = include_surah
+        if rasm_ol_mushaf:
+            context["rasm_ol_mushaf"] = rasm_ol_mushaf
         return context
 
     def get_serializer_class(self) -> type[AyahAddSerializer] | type[AyahSerializer] | type[AyahSerializerView]:

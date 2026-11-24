@@ -70,8 +70,13 @@ class MushafSerializer(serializers.ModelSerializer):
 class SurahNameSerializer(serializers.ModelSerializer):
     class Meta:
         model = SurahName
-        fields = ["id", "name", "pronunciation", "translation", "transliteration"]
+        fields = ["name", "pronunciation", "translation", "transliteration"]
         read_only_fields = ["creator"]
+
+
+class SurahNameWithIdSerializer(SurahNameSerializer):
+    class Meta(SurahNameSerializer.Meta):
+        fields = ["id", *SurahNameSerializer.Meta.fields]
 
 
 class SurahBismillahSerializer(serializers.Serializer):
@@ -129,6 +134,8 @@ class SurahSerializer(serializers.ModelSerializer):
 
 
 class SurahInAyahSerializer(serializers.ModelSerializer):
+    names = SurahNameWithIdSerializer(read_only=True, many=True)
+
     class Meta:
         model = Surah
         fields = ["id", "names"]
@@ -305,8 +312,14 @@ class AyahSerializerView(AyahSerializer):
     class Meta(AyahSerializer.Meta):
         fields = AyahSerializer.Meta.fields + ["surah", "rasm_ol_mushaf", "words"]
 
-    def get_rasm_ol_mushaf(self, instance) -> ReturnDict:
-        m = RomSurahAyahs.objects.filter(surah=instance.surah).first()
+    def get_rasm_ol_mushaf(self, instance) -> ReturnDict | None:
+        mappings = RomSurahAyahs.objects.filter(surah=instance.surah)
+        mushaf_slug = self.context.get("rasm_ol_mushaf")
+        if mushaf_slug:
+            mappings = mappings.filter(rasm_ol_mushaf__slug=mushaf_slug)
+        m = mappings.select_related("rasm_ol_mushaf").first()
+        if m is None:
+            return None
 
         return MushafSerializer(m.rasm_ol_mushaf).data
 
@@ -861,8 +874,9 @@ class AyahBreakersResponseSerializer(serializers.Serializer):
     """Serializer for the ayahs_breakers endpoint response"""
 
     id = serializers.UUIDField(help_text="id of the ayah")
-    surah = serializers.IntegerField(help_text="Surah number")
-    ayah = serializers.IntegerField(help_text="Ayah number")
+    surah_id = serializers.UUIDField(help_text="id of the surah")
+    surah_number = serializers.IntegerField(help_text="Surah number")
+    ayah_number = serializers.IntegerField(help_text="Ayah number")
     length = serializers.IntegerField(help_text="Ayah text length")
     juz = serializers.IntegerField(
         allow_null=True, help_text="Juz number (null if not a juz breaker)"

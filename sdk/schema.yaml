@@ -243,6 +243,13 @@ paths:
           format: uuid
         description: A UUID string identifying this ayah.
         required: true
+      - in: query
+        name: rasm_ol_mushaf
+        schema:
+          type: string
+        description: Slug of the Rasm Ol Mushaf to return on the ayah. If omitted,
+          the associated rasm ol mushaf is left unchanged. (e.g. 'hafs', 'warsh',
+          etc.)
       tags:
       - ayahs
       security:
@@ -374,6 +381,13 @@ paths:
           enum:
           - asc
           - desc
+      - in: query
+        name: rasm_ol_mushaf
+        schema:
+          type: string
+        description: Slug of the Rasm Ol Mushaf to pick ayahs from and return. If
+          omitted, any ayah is eligible and the associated rasm ol mushaf is left
+          unchanged. (e.g. 'hafs', 'warsh', etc.)
       - name: search
         required: false
         in: query
@@ -783,7 +797,8 @@ paths:
           description: No response body
   /mushafs/{id}/transmissions/:
     get:
-      operationId: mushafs_transmissions_retrieve
+      operationId: mushafs_transmissions_list
+      summary: List transmissions for this Mushaf
       parameters:
       - in: path
         name: id
@@ -792,6 +807,33 @@ paths:
           format: uuid
         description: A UUID string identifying this rasm ol mushaf.
         required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+          enum:
+          - asc
+          - desc
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
       tags:
       - mushafs
       security:
@@ -801,10 +843,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Mushaf'
+                $ref: '#/components/schemas/PaginatedTransmissionList'
           description: ''
     post:
       operationId: mushafs_transmissions_create
+      summary: Create a transmission for this Mushaf
       parameters:
       - in: path
         name: id
@@ -819,13 +862,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Mushaf'
+              $ref: '#/components/schemas/Transmission'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Mushaf'
+              $ref: '#/components/schemas/Transmission'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Mushaf'
+              $ref: '#/components/schemas/Transmission'
         required: true
       security:
       - knoxApiToken: []
@@ -834,11 +877,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Mushaf'
+                $ref: '#/components/schemas/Transmission'
           description: ''
   /mushafs/{id}/transmissions/{transmission_id}/:
     get:
-      operationId: mushafs_transmissions_retrieve_2
+      operationId: mushafs_transmissions_retrieve
+      summary: Retrieve a transmission for this Mushaf
       parameters:
       - in: path
         name: id
@@ -861,10 +905,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Mushaf'
+                $ref: '#/components/schemas/Transmission'
           description: ''
     post:
       operationId: mushafs_transmissions_create_2
+      summary: Create a transmission for this Mushaf
       parameters:
       - in: path
         name: id
@@ -884,13 +929,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Mushaf'
+              $ref: '#/components/schemas/Transmission'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Mushaf'
+              $ref: '#/components/schemas/Transmission'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Mushaf'
+              $ref: '#/components/schemas/Transmission'
         required: true
       security:
       - knoxApiToken: []
@@ -899,10 +944,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Mushaf'
+                $ref: '#/components/schemas/Transmission'
           description: ''
     delete:
       operationId: mushafs_transmissions_destroy
+      summary: Delete a transmission for this Mushaf
       parameters:
       - in: path
         name: id
@@ -921,8 +967,16 @@ paths:
       security:
       - knoxApiToken: []
       responses:
-        '204':
-          description: No response body
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: Deleted
+          description: ''
   /mushafs/import/:
     post:
       operationId: mushafs_import_create
@@ -1644,11 +1698,10 @@ paths:
           description: No response body
   /recitations/{id}/track/:
     get:
-      operationId: recitations_track_retrieve
-      description: 'GET: list all tracks (RecitationSurah) for this recitation, optionally
-        filtered by surah_id. POST: upload a surah audio file and optional word-level
-        timestamps for this recitation.'
-      summary: List or create Tracks (per-surah audio files) for this Recitation
+      operationId: recitations_track_list
+      description: List all tracks (RecitationSurah) for this recitation, optionally
+        filtered by surah_id.
+      summary: List Tracks (per-surah audio files) for this Recitation
       parameters:
       - in: path
         name: id
@@ -1657,6 +1710,39 @@ paths:
           format: uuid
         description: A UUID string identifying this recitation.
         required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+          enum:
+          - asc
+          - desc
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: surah_id
+        schema:
+          type: string
+          format: uuid
+        description: id of the Surah to filter tracks by.
       tags:
       - recitations
       security:
@@ -1666,14 +1752,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Recitation'
+                $ref: '#/components/schemas/PaginatedRecitationSurahList'
           description: ''
     post:
       operationId: recitations_track_create
-      description: 'GET: list all tracks (RecitationSurah) for this recitation, optionally
-        filtered by surah_id. POST: upload a surah audio file and optional word-level
-        timestamps for this recitation.'
-      summary: List or create Tracks (per-surah audio files) for this Recitation
+      description: Upload a surah audio file and optional word-level timestamps for
+        this recitation.
+      summary: Create a Track (per-surah audio file) for this Recitation
       parameters:
       - in: path
         name: id
@@ -1695,7 +1780,7 @@ paths:
                   format: binary
                 surah_id:
                   type: string
-                  format: id
+                  format: uuid
                 word_timestamps:
                   type: string
                   description: JSON list of word timestamps, optional
@@ -1705,18 +1790,16 @@ paths:
       security:
       - knoxApiToken: []
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Recitation'
+                $ref: '#/components/schemas/TrackDetail'
           description: ''
   /recitations/{id}/track/{track_id}/:
     get:
-      operationId: recitations_track_retrieve_2
-      description: 'GET: retrieve a single track. PATCH: replace the audio file and/or
-        word timestamps. DELETE: remove the track.'
-      summary: Retrieve, update, or delete a single Track for this Recitation
+      operationId: recitations_track_retrieve
+      summary: Retrieve a single Track for this Recitation
       parameters:
       - in: path
         name: id
@@ -1739,13 +1822,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Recitation'
+                $ref: '#/components/schemas/TrackDetail'
           description: ''
     patch:
       operationId: recitations_track_partial_update
-      description: 'GET: retrieve a single track. PATCH: replace the audio file and/or
-        word timestamps. DELETE: remove the track.'
-      summary: Retrieve, update, or delete a single Track for this Recitation
+      description: Replace the audio file and/or word timestamps.
+      summary: Update a Track for this Recitation
       parameters:
       - in: path
         name: id
@@ -1765,10 +1847,14 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedRecitation'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedRecitation'
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                word_timestamps:
+                  type: string
+                  description: JSON list of word timestamps, optional
       security:
       - knoxApiToken: []
       responses:
@@ -1776,13 +1862,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Recitation'
+                $ref: '#/components/schemas/TrackDetail'
           description: ''
     delete:
       operationId: recitations_track_destroy
-      description: 'GET: retrieve a single track. PATCH: replace the audio file and/or
-        word timestamps. DELETE: remove the track.'
-      summary: Retrieve, update, or delete a single Track for this Recitation
+      summary: Delete a Track for this Recitation
       parameters:
       - in: path
         name: id
@@ -1836,12 +1920,12 @@ paths:
         description: 'Slug of the Rasm Ol Mushaf to filter Surahs by. Common value:
           ''hafs''. Any string is accepted. (e.g. ''hafs'', ''warsh'', etc.)'
         required: true
-      - name: search
-        required: false
-        in: query
-        description: A search term.
+      - in: query
+        name: search
         schema:
           type: string
+        description: Search Surahs by any of their names (name, pronunciation, translation,
+          or transliteration), number, period, or search terms.
       tags:
       - general
       - surahs
@@ -1991,7 +2075,8 @@ paths:
           description: No response body
   /surahs/{id}/names/:
     get:
-      operationId: surahs_names_retrieve
+      operationId: surahs_names_list
+      summary: List names for this Surah
       parameters:
       - in: path
         name: id
@@ -2000,6 +2085,33 @@ paths:
           format: uuid
         description: A UUID string identifying this surah.
         required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+          enum:
+          - asc
+          - desc
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
       tags:
       - surahs
       security:
@@ -2009,10 +2121,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Surah'
+                $ref: '#/components/schemas/PaginatedSurahNameWithIdList'
           description: ''
     post:
       operationId: surahs_names_create
+      summary: Create a name for this Surah
       parameters:
       - in: path
         name: id
@@ -2027,13 +2140,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Surah'
+              $ref: '#/components/schemas/SurahName'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Surah'
+              $ref: '#/components/schemas/SurahName'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Surah'
+              $ref: '#/components/schemas/SurahName'
         required: true
       security:
       - knoxApiToken: []
@@ -2042,11 +2155,16 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Surah'
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: created
           description: ''
   /surahs/{id}/names/{name_id}/:
     post:
       operationId: surahs_names_create_2
+      summary: Update a name for this Surah
       parameters:
       - in: path
         name: id
@@ -2066,13 +2184,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Surah'
+              $ref: '#/components/schemas/SurahName'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Surah'
+              $ref: '#/components/schemas/SurahName'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Surah'
+              $ref: '#/components/schemas/SurahName'
         required: true
       security:
       - knoxApiToken: []
@@ -2081,10 +2199,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Surah'
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: updated
           description: ''
     delete:
       operationId: surahs_names_destroy
+      summary: Delete a name for this Surah
       parameters:
       - in: path
         name: id
@@ -2103,8 +2226,16 @@ paths:
       security:
       - knoxApiToken: []
       responses:
-        '204':
-          description: No response body
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: Removed
+          description: ''
   /takhtits/:
     get:
       operationId: takhtits_list
@@ -2174,7 +2305,7 @@ paths:
           description: ''
     post:
       operationId: takhtits_create
-      description: Create a new Takhtit. Requires mushaf_id and account_id in the
+      description: Create a new Takhtit. Requires rasm_ol_mushaf and account in the
         request body.
       summary: Create a new Takhtit record
       tags:
@@ -2183,19 +2314,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                mushaf_id:
-                  type: string
-                  format: id
-                  description: id of the mushaf to link.
-                account_id:
-                  type: string
-                  format: id
-                  description: id of the account to link.
-              required:
-              - mushaf_id
-              - account_id
+              $ref: '#/components/schemas/Takhtit'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Takhtit'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Takhtit'
+        required: true
       security:
       - knoxApiToken: []
       responses:
@@ -3002,7 +3128,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedAyahTranslationList'
+                $ref: '#/components/schemas/PaginatedAyahTranslationNestedList'
           description: ''
   /translations/{id}/ayahs/{ayah_id}/:
     get:
@@ -3580,10 +3706,14 @@ components:
           type: string
           format: uuid
           description: id of the ayah
-        surah:
+        surah_id:
+          type: string
+          format: uuid
+          description: id of the surah
+        surah_number:
           type: integer
           description: Surah number
-        ayah:
+        ayah_number:
           type: integer
           description: Ayah number
         length:
@@ -3610,7 +3740,7 @@ components:
           nullable: true
           description: Manzil number (null if not a manzil breaker)
       required:
-      - ayah
+      - ayah_number
       - hizb
       - id
       - juz
@@ -3618,7 +3748,8 @@ components:
       - manzil
       - page
       - rub
-      - surah
+      - surah_id
+      - surah_number
     AyahInSurah:
       type: object
       properties:
@@ -3699,6 +3830,7 @@ components:
         rasm_ol_mushaf:
           type: object
           additionalProperties: {}
+          nullable: true
           readOnly: true
         words:
           type: array
@@ -3739,6 +3871,22 @@ components:
       - id
       - text
       - translation_id
+    AyahTranslationNested:
+      type: object
+      properties:
+        ayah_id:
+          type: string
+          format: uuid
+          readOnly: true
+        text:
+          type: string
+        bismillah:
+          type: string
+          readOnly: true
+      required:
+      - ayah_id
+      - bismillah
+      - text
     Group:
       type: object
       properties:
@@ -3922,10 +4070,10 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/AyahSerializerView'
-    PaginatedAyahTranslationList:
+    PaginatedAyahTranslationNestedList:
       type: array
       items:
-        $ref: '#/components/schemas/AyahTranslation'
+        $ref: '#/components/schemas/AyahTranslationNested'
     PaginatedMushafList:
       type: array
       items:
@@ -3942,10 +4090,18 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/RecitationList'
+    PaginatedRecitationSurahList:
+      type: array
+      items:
+        $ref: '#/components/schemas/RecitationSurah'
     PaginatedSurahList:
       type: array
       items:
         $ref: '#/components/schemas/Surah'
+    PaginatedSurahNameWithIdList:
+      type: array
+      items:
+        $ref: '#/components/schemas/SurahNameWithId'
     PaginatedTakhtitList:
       type: array
       items:
@@ -3954,6 +4110,10 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/TranslationList'
+    PaginatedTransmissionList:
+      type: array
+      items:
+        $ref: '#/components/schemas/Transmission'
     PaginatedWordBreakersResponseList:
       type: array
       items:
@@ -4702,6 +4862,27 @@ components:
       - reciter
       - track_count
       - updated_at
+    RecitationSurah:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        surah_id:
+          type: string
+          nullable: true
+          readOnly: true
+        file_url:
+          type: string
+          readOnly: true
+        duration:
+          type: string
+      required:
+      - duration
+      - file_url
+      - id
+      - surah_id
     ReciterDetail:
       type: object
       properties:
@@ -4850,12 +5031,29 @@ components:
         names:
           type: array
           items:
-            type: string
-            format: uuid
+            $ref: '#/components/schemas/SurahNameWithId'
+          readOnly: true
       required:
       - id
       - names
     SurahName:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 50
+        pronunciation:
+          type: string
+          nullable: true
+        translation:
+          type: string
+          nullable: true
+        transliteration:
+          type: string
+          nullable: true
+      required:
+      - name
+    SurahNameWithId:
       type: object
       properties:
         id:
@@ -4904,6 +5102,43 @@ components:
       - creator
       - id
       - rasm_ol_mushaf
+    TrackDetail:
+      type: object
+      description: Detailed serializer for a RecitationSurah (track), including timestamps.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        surah_id:
+          type: string
+          nullable: true
+          readOnly: true
+        file_url:
+          type: string
+          readOnly: true
+        words_timestamps:
+          type: string
+          readOnly: true
+        ayahs_timestamps:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - ayahs_timestamps
+      - created_at
+      - file_url
+      - id
+      - surah_id
+      - updated_at
+      - words_timestamps
     Translation:
       type: object
       properties:

@@ -26,6 +26,7 @@ from quran.models import (
 from quran.serializers import (
     RecitationSerializer,
     RecitationListSerializer,
+    RecitationSurahSerializer,
     TrackDetailSerializer,
 )
 from mutagen.mp3 import MP3
@@ -162,18 +163,31 @@ class RecitationViewSet(viewsets.ModelViewSet):
         return self.update(request, *args, partial=True, **kwargs)
 
     @extend_schema(
-        summary="List or create Tracks (per-surah audio files) for this Recitation",
-        description=(
-            "GET: list all tracks (RecitationSurah) for this recitation, "
-            "optionally filtered by surah_id. "
-            "POST: upload a surah audio file and optional word-level timestamps for this recitation."
-        ),
+        methods=["GET"],
+        summary="List Tracks (per-surah audio files) for this Recitation",
+        description="List all tracks (RecitationSurah) for this recitation, optionally filtered by surah_id.",
+        request=None,
+        parameters=[
+            OpenApiParameter(
+                name="surah_id",
+                type=OpenApiTypes.UUID,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="id of the Surah to filter tracks by.",
+            )
+        ],
+        responses={200: RecitationSurahSerializer(many=True)},
+    )
+    @extend_schema(
+        methods=["POST"],
+        summary="Create a Track (per-surah audio file) for this Recitation",
+        description="Upload a surah audio file and optional word-level timestamps for this recitation.",
         request={
             "multipart/form-data": {
                 "type": "object",
                 "properties": {
                     "file": {"type": "string", "format": "binary"},
-                    "surah_id": {"type": "string", "format": "id"},
+                    "surah_id": {"type": "string", "format": "uuid"},
                     "word_timestamps": {
                         "type": "string",
                         "description": "JSON list of word timestamps, optional",
@@ -182,6 +196,7 @@ class RecitationViewSet(viewsets.ModelViewSet):
                 "required": ["file", "surah_id"],
             },
         },
+        responses={201: TrackDetailSerializer},
     )
     @action(
         detail=True,
@@ -204,8 +219,6 @@ class RecitationViewSet(viewsets.ModelViewSet):
             surah_id = request.query_params.get("surah_id")
             if surah_id:
                 queryset = queryset.filter(surah__id=surah_id)
-            from quran.serializers import RecitationSurahSerializer
-
             serializer = RecitationSurahSerializer(
                 queryset, many=True, context=self.get_serializer_context()
             )
@@ -337,12 +350,34 @@ class RecitationViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @extend_schema(
-        summary="Retrieve, update, or delete a single Track for this Recitation",
-        description=(
-            "GET: retrieve a single track. "
-            "PATCH: replace the audio file and/or word timestamps. "
-            "DELETE: remove the track."
-        ),
+        methods=["GET"],
+        summary="Retrieve a single Track for this Recitation",
+        request=None,
+        responses={200: TrackDetailSerializer},
+    )
+    @extend_schema(
+        methods=["PATCH"],
+        summary="Update a Track for this Recitation",
+        description="Replace the audio file and/or word timestamps.",
+        request={
+            "multipart/form-data": {
+                "type": "object",
+                "properties": {
+                    "file": {"type": "string", "format": "binary"},
+                    "word_timestamps": {
+                        "type": "string",
+                        "description": "JSON list of word timestamps, optional",
+                    },
+                },
+            },
+        },
+        responses={200: TrackDetailSerializer},
+    )
+    @extend_schema(
+        methods=["DELETE"],
+        summary="Delete a Track for this Recitation",
+        request=None,
+        responses={204: None},
     )
     @action(
         detail=True,

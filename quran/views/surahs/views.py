@@ -1,6 +1,6 @@
 from quran.serializers import SurahSerializer
 from quran.serializers import SurahDetailSerializer
-from rest_framework import permissions, viewsets, status, filters, serializers
+from rest_framework import permissions, viewsets, filters, serializers
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import (
@@ -8,7 +8,6 @@ from drf_spectacular.utils import (
     extend_schema_view,
     OpenApiTypes,
     OpenApiParameter,
-    OpenApiExample,
 )
 from rest_framework.decorators import action
 from core import permissions as core_permissions
@@ -18,6 +17,7 @@ from quran.serializers import (
     SurahSerializer,
     SurahDetailSerializer,
     SurahNameSerializer,
+    SurahNameWithIdSerializer,
 )
 
 
@@ -31,7 +31,14 @@ from quran.serializers import (
                 location=OpenApiParameter.QUERY,
                 required=True,
                 description="Slug of the Rasm Ol Mushaf to filter Surahs by. Common value: 'hafs'. Any string is accepted. (e.g. 'hafs', 'warsh', etc.)",
-            )
+            ),
+            OpenApiParameter(
+                name="search",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Search Surahs by any of their names (name, pronunciation, translation, or transliteration), number, period, or search terms.",
+            ),
         ],
         tags=["general", "surahs"],
     ),
@@ -55,7 +62,15 @@ class SurahViewSet(viewsets.ModelViewSet):
         filters.SearchFilter,
         filters.OrderingFilter,
     ]
-    search_fields = ["period", "number"]  # Add names field
+    search_fields = [
+        "names__name",
+        "names__pronunciation",
+        "names__translation",
+        "names__transliteration",
+        "search_terms",
+        "period",
+        "number",
+    ]
     ordering_fields = ["created_at"]
     pagination_class = CustomLimitOffsetPagination
     lookup_field = "id"
@@ -86,9 +101,10 @@ class SurahViewSet(viewsets.ModelViewSet):
             queryset = queryset.prefetch_related(
                 "rom_surah_ayahs_surah",
                 "ayahs__words",
+                "names",
             ).only(*surah_fields)
         else:
-            queryset = queryset.prefetch_related("rom_surah_ayahs_surah").only(
+            queryset = queryset.prefetch_related("rom_surah_ayahs_surah", "names").only(
                 *surah_fields
             )
         mushaf_slug = self.request.query_params.get("rasm_ol_mushaf")
@@ -107,13 +123,30 @@ class SurahViewSet(viewsets.ModelViewSet):
         next_number = 1 if last_surah is None else last_surah.number + 1
         serializer.save(creator=self.request.user, number=next_number)
 
+    @extend_schema(
+        methods=["GET"],
+        summary="List names for this Surah",
+        request=None,
+        responses={200: SurahNameWithIdSerializer(many=True)},
+    )
+    @extend_schema(
+        methods=["POST"],
+        summary="Create a name for this Surah",
+        request=SurahNameSerializer,
+        responses={
+            200: {
+                "type": "object",
+                "properties": {"status": {"type": "string", "example": "created"}},
+            }
+        },
+    )
     @action(detail=True, methods=["post", "get"], url_path="names")
     def names(self, request, *args, **kwargs) -> Response:
         surah: Surah = self.get_object()
         new_surah_name = request.data
 
         if request.method.lower() == "get":
-            serializer = SurahNameSerializer(surah.names.all(), many=True)
+            serializer = SurahNameWithIdSerializer(surah.names.all(), many=True)
             return Response(serializer.data)
 
         serializer = SurahNameSerializer(data=(new_surah_name | {"surah": surah.id}))
@@ -133,6 +166,28 @@ class SurahViewSet(viewsets.ModelViewSet):
 
         return Response({"status": "created"})
 
+    @extend_schema(
+        methods=["POST"],
+        summary="Update a name for this Surah",
+        request=SurahNameSerializer,
+        responses={
+            200: {
+                "type": "object",
+                "properties": {"status": {"type": "string", "example": "updated"}},
+            }
+        },
+    )
+    @extend_schema(
+        methods=["DELETE"],
+        summary="Delete a name for this Surah",
+        request=None,
+        responses={
+            200: {
+                "type": "object",
+                "properties": {"status": {"type": "string", "example": "Removed"}},
+            }
+        },
+    )
     @action(
         detail=True, methods=["post", "delete"], url_path="names/(?P<name_id>[^/.]+)"
     )

@@ -235,7 +235,7 @@ class TranslationViewSet(viewsets.ModelViewSet):
                 description="id of the Surah to filter AyahTranslations by.",
             )
         ],
-        responses={200: AyahTranslationSerializer(many=True)},
+        responses={200: AyahTranslationNestedSerializer(many=True)},
     )
     @action(detail=True, methods=["get"], url_path="ayahs")
     def ayahs(self, request, *args, **kwargs) -> Response:
